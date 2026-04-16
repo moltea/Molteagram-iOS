@@ -163,6 +163,7 @@ enum PeerInfoSettingsSection {
     case devices
     case chatFolders
     case notificationsAndSounds
+    case molteagramSettings
     case privacyAndSecurity
     case passwordSetup
     case dataAndStorage
@@ -631,6 +632,11 @@ final class PeerInfoScreenNode: ViewControllerTracingNode, PeerInfoScreenNodePro
                     return
                 }
                 self.openUsernameContextMenu(node: node, gesture: gesture)
+            }, copyId: { [weak self] content in
+                guard let self else {
+                    return
+                }
+                self.copyId(content: content)
             }, openBioContextMenu: { [weak self] node, gesture in
                 guard let self else {
                     return

@@ -3,6 +3,7 @@ import Postbox
 import TelegramApi
 import SwiftSignalKit
 import Emoji
+import MolteagramCore
 
 public enum EnqueueMessageGrouping {
     case none
@@ -506,6 +507,9 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
      * If it is a support account, mark messages as read here as they are
      * not marked as read when chat is opened.
      **/
+    if MolteagramInterceptor.shared.currentStatuses.doNotSendOnline {
+        MolteagramInterceptor.shared.requestDelayedOfflinePing()
+    }
     if account.isSupportUser {
         let namespace: MessageId.Namespace
         if peerId.namespace == Namespaces.Peer.SecretChat {

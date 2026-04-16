@@ -211,6 +211,8 @@ final class AutomaticBusinessMessageSetupChatContents: ChatCustomContentsProtoco
             initialShortcut = ""
         case .hashTagSearch:
             initialShortcut = ""
+        case .deletedMessages, .editedMessages(_):
+            initialShortcut = ""
         }
         
         let queue = Queue()
@@ -248,6 +250,8 @@ final class AutomaticBusinessMessageSetupChatContents: ChatCustomContentsProtoco
         case .businessLinkSetup:
             break
         case .hashTagSearch:
+            break
+        case .deletedMessages, .editedMessages(_):
             break
         }
     }

@@ -507,6 +507,7 @@ public class ChatMessageGiveawayBubbleContentNode: ChatMessageBubbleContentNode,
                 let (dateTextLayout, dateTextApply) = makeDateTextLayout(TextNodeLayoutArguments(attributedString: dateTextString, backgroundColor: nil, maximumNumberOfLines: 5, truncationType: .end, constrainedSize: CGSize(width: maxTextWidth, height: CGFloat.greatestFiniteMagnitude), alignment: .center, cutout: nil, insets: UIEdgeInsets()))
                 
                 var edited = false
+                var deleted = false
                 if item.attributes.updatingMedia != nil {
                     edited = true
                 }
@@ -519,6 +520,8 @@ public class ChatMessageGiveawayBubbleContentNode: ChatMessageBubbleContentNode,
                 for attribute in item.message.attributes {
                     if let attribute = attribute as? EditedMessageAttribute {
                         edited = !attribute.isHidden
+                    } else if let attribute = attribute as? DeletedMessageAttribute {
+                        deleted = !attribute.isHidden
                     } else if let attribute = attribute as? ViewCountMessageAttribute {
                         viewCount = attribute.count
                     } else if let attribute = attribute as? ReplyThreadMessageAttribute, case .peer = item.chatLocation {
@@ -565,6 +568,7 @@ public class ChatMessageGiveawayBubbleContentNode: ChatMessageBubbleContentNode,
                         context: item.context,
                         presentationData: item.presentationData,
                         edited: edited,
+                        deleted: deleted,
                         impressionCount: !item.presentationData.isPreview ? viewCount : nil,
                         dateText: dateText,
                         type: statusType,

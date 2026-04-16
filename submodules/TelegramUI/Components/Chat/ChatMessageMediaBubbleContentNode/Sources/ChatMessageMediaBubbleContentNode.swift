@@ -345,6 +345,7 @@ public class ChatMessageMediaBubbleContentNode: ChatMessageBubbleContentNode {
             }
 
             var edited = false
+            var deleted = false
             if item.attributes.updatingMedia != nil {
                 edited = true
             }
@@ -360,6 +361,11 @@ public class ChatMessageMediaBubbleContentNode: ChatMessageBubbleContentNode {
                     if case .mosaic = preparePosition {
                     } else {
                         edited = !attribute.isHidden
+                    }
+                } else if let attribute = attribute as? DeletedMessageAttribute {
+                    if case .mosaic = preparePosition {
+                    } else {
+                        deleted = !attribute.isHidden
                     }
                 } else if let attribute = attribute as? ViewCountMessageAttribute {
                     viewCount = attribute.count
@@ -415,6 +421,7 @@ public class ChatMessageMediaBubbleContentNode: ChatMessageBubbleContentNode {
                 ChatMessageDateAndStatus(
                     type: statusType,
                     edited: edited,
+                    deleted: deleted,
                     viewCount: viewCount,
                     dateReactions: dateReactionsAndPeers.reactions,
                     dateReactionPeers: dateReactionsAndPeers.peers,

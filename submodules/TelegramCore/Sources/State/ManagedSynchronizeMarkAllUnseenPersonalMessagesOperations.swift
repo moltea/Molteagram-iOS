@@ -1,5 +1,6 @@
 import Foundation
 import TelegramApi
+import MolteagramCore
 import Postbox
 import SwiftSignalKit
 import MtProtoKit
@@ -148,6 +149,9 @@ private func synchronizeMarkAllUnseen(transaction: Transaction, postbox: Postbox
                 guard let inputChannel = inputChannel else {
                     return .single(nil)
                 }
+                if MolteagramInterceptor.shared.currentStatuses.doNotReadMessages {
+                    return .single(nil)
+                }
                 return network.request(Api.functions.channels.readMessageContents(channel: inputChannel, id: filteredIds.map { $0.id }))
                 |> map { result -> Int32? in
                     if ids.count < limit {
@@ -157,6 +161,9 @@ private func synchronizeMarkAllUnseen(transaction: Transaction, postbox: Postbox
                     }
                 }
             } else {
+                if MolteagramInterceptor.shared.currentStatuses.doNotReadMessages {
+                    return .single(nil)
+                }
                 return network.request(Api.functions.messages.readMessageContents(id: filteredIds.map { $0.id }))
                 |> map { result -> Int32? in
                     switch result {

@@ -2,6 +2,8 @@ import Foundation
 import UIKit
 import AsyncDisplayKit
 import Display
+import TelegramPresentationData
+import AccountContext
 
 private func generateCheckIcon(_ color: UIColor) -> UIImage? {
     return generateImage(CGSize(width: 14.0, height: 11.0), rotatedContext: { size, context in
@@ -62,10 +64,10 @@ final class InstantPageSettingsFontFamilyNode: InstantPageSettingsItemNode {
             if let familyFont = UIFont(name: family, size: 17.0) {
                 font = familyFont
             } else {
-                font = UIFont.systemFont(ofSize: 17.0)
+                font = Font.regular(17.0)
             }
         } else {
-            font = UIFont.systemFont(ofSize: 17.0)
+            font = Font.regular(17.0)
         }
         self.labelNode.attributedText = NSAttributedString(string: self.title, font: font, textColor: theme.primaryColor)
         self.checkNode.image = generateCheckIcon(theme.accentColor)

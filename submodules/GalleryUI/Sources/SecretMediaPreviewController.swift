@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import MolteagramCore
 import AsyncDisplayKit
 import Display
 import Postbox
@@ -548,7 +549,10 @@ public final class SecretMediaPreviewController: ViewController {
                     self?.didSetReady = true
                 }
                 self._ready.set(ready |> map { true })
-                self.markMessageAsConsumedDisposable.set(self.context.engine.messages.markMessageContentAsConsumedInteractively(messageId: message.id).start())
+                let disableMarkingAsConsumed = MolteagramInterceptor.shared.current.disableMarkingAsConsumed
+                if !disableMarkingAsConsumed {
+                    self.markMessageAsConsumedDisposable.set(self.context.engine.messages.markMessageContentAsConsumedInteractively(messageId: message.id).start())
+                }
             } else {
                 var beginTimeAndTimeout: (Double, Double, Bool)?
                 var videoDuration: Double?

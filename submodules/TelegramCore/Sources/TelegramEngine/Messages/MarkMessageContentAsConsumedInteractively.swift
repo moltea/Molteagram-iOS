@@ -1,6 +1,7 @@
 import Foundation
 import Postbox
 import TelegramApi
+import MolteagramCore
 import SwiftSignalKit
 
 func _internal_markMessageContentAsConsumedInteractively(postbox: Postbox, messageId: MessageId) -> Signal<Void, NoError> {

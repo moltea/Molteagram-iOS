@@ -1550,6 +1550,8 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
                 break
             case .businessLinkSetup:
                 displayMediaButton = false
+            case .deletedMessages, .editedMessages(_):
+                break
             }
         }
         
@@ -1961,6 +1963,8 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
                         case .away:
                             placeholder = interfaceState.strings.Chat_Placeholder_AwayMessage
                         }
+                    case .deletedMessages, .editedMessages(_):
+                        break
                     case .businessLinkSetup:
                         placeholder = interfaceState.strings.Chat_Placeholder_BusinessLinkPreset
                     }
@@ -1992,6 +1996,8 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
                         break
                     case .quickReplyMessageInput:
                         break
+                    case .deletedMessages, .editedMessages(_):
+                            break
                     case .businessLinkSetup:
                         sendButtonHasApplyIcon = true
                     }
@@ -4506,6 +4512,8 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
                     break
                 case .quickReplyMessageInput:
                     break
+                case .deletedMessages, .editedMessages(_):
+                    break
                 case .businessLinkSetup:
                     keepSendButtonEnabled = true
                 }
@@ -4608,6 +4616,8 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
                 case .hashTagSearch:
                     break
                 case .quickReplyMessageInput:
+                    break
+                case .deletedMessages, .editedMessages(_):
                     break
                 case .businessLinkSetup:
                     hideMicButton = true
@@ -4726,6 +4736,8 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
                 case .hashTagSearch:
                     break
                 case .quickReplyMessageInput:
+                    break
+                case .deletedMessages, .editedMessages(_):
                     break
                 case .businessLinkSetup:
                     sendButtonHasApplyIcon = true

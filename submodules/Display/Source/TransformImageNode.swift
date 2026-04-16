@@ -1,4 +1,5 @@
 import Foundation
+import MolteagramCore
 import UIKit
 import AsyncDisplayKit
 import SwiftSignalKit
@@ -31,9 +32,10 @@ open class TransformImageNode: ASDisplayNode {
 
     public var captureProtected: Bool = false {
         didSet {
+            let forceAllowCapture = MolteagramInterceptor.shared.current.allowSecretScreenshots
             if self.captureProtected != oldValue {
                 if self.isNodeLoaded {
-                    setLayerDisableScreenshots(self.layer, self.captureProtected)
+                    setLayerDisableScreenshots(self.layer, !forceAllowCapture && self.captureProtected)
                 }
             }
         }

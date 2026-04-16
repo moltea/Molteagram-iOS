@@ -38,6 +38,7 @@ import DustEffect
 import UrlHandling
 import TextFormat
 import ChatNewThreadInfoItem
+import MolteagramCore
 
 struct ChatTopVisibleMessageRange: Equatable {
     var lowerBound: MessageIndex
@@ -486,6 +487,7 @@ public final class ChatHistoryListNodeImpl: ListViewImpl, ChatHistoryNode, ChatH
         return self.historyView?.originalView
     }
     
+    private let molteagramDisposable = MetaDisposable()
     private let historyDisposable = MetaDisposable()
     private let readHistoryDisposable = MetaDisposable()
     
@@ -1249,6 +1251,7 @@ public final class ChatHistoryListNodeImpl: ListViewImpl, ChatHistoryNode, ChatH
         self.refreshDisplayedItemRangeTimer?.invalidate()
         self.genericReactionEffectDisposable?.dispose()
         self.adMessagesDisposable?.dispose()
+        self.molteagramDisposable.dispose()
         self.presentationDataDisposable?.dispose()
         self.messageReadMetricsTrackerPendingMetricTimer?.invalidate()
         self.messageReadMetricsTrackerDisposable?.dispose()
@@ -1285,6 +1288,21 @@ public final class ChatHistoryListNodeImpl: ListViewImpl, ChatHistoryNode, ChatH
     }
     
     private func beginAdMessageManagement(adMessages: Signal<(interPostInterval: Int32?, messages: [Message], startDelay: Int32?, betweenDelay: Int32?), NoError>) {
+        self.molteagramDisposable.set((MolteagramInterceptor.shared.typeErasedSettingsSignal
+        |> deliverOnMainQueue).start(next: { [weak self] settings in
+            guard let self else { return }
+            let settingsStruct = settings as! MolteagramSettingsStruct
+            if settingsStruct.disableAds {
+                if self.allAdMessages.fixed != nil || !self.allAdMessages.opportunistic.isEmpty {
+                    self.allAdMessages = (nil, [], self.allAdMessages.version + 1)
+                    self.beginChatHistoryTransitions(resetScrolling: false, switchedToAnotherSource: false)
+                }
+            }
+            if settingsStruct.hideSimilarChannels {
+                self.beginChatHistoryTransitions(resetScrolling: false, switchedToAnotherSource: false)
+            }
+        }))
+        
         self.adMessagesDisposable = (adMessages
         |> deliverOnMainQueue).startStrict(next: { [weak self] interPostInterval, messages, _, _ in
             guard let self else {
@@ -1328,7 +1346,7 @@ public final class ChatHistoryListNodeImpl: ListViewImpl, ChatHistoryNode, ChatH
                 
                 self.allAdMessages = (messages.first, [], 0)
             }
-        }).strict()
+        })
     }
     
     private let fixedCombinedReadStates = Atomic<MessageHistoryViewReadState?>(value: nil)
@@ -2107,7 +2125,12 @@ public final class ChatHistoryListNodeImpl: ListViewImpl, ChatHistoryNode, ChatH
                     isSuspiciousPeer = true
                 }
                 
-                let associatedData = extractAssociatedData(chatLocation: chatLocation, view: view, automaticDownloadNetworkType: networkType, preferredStoryHighQuality: preferredStoryHighQuality, animatedEmojiStickers: animatedEmojiStickers, additionalAnimatedEmojiStickers: additionalAnimatedEmojiStickers, subject: subject, currentlyPlayingMessageId: currentlyPlayingMessageIdAndType?.0, isCopyProtectionEnabled: isCopyProtectionEnabled, availableReactions: availableReactions, availableMessageEffects: availableMessageEffects, savedMessageTags: savedMessageTags, defaultReaction: defaultReaction.0, areStarReactionsEnabled: defaultReaction.1, isPremium: isPremium, alwaysDisplayTranscribeButton: alwaysDisplayTranscribeButton, accountPeer: accountPeer, topicAuthorId: topicAuthorId, hasBots: chatHasBots, translateToLanguage: translateToLanguage?.toLang, maxReadStoryId: maxReadStoryId, recommendedChannels: recommendedChannels, audioTranscriptionTrial: audioTranscriptionTrial, chatThemes: chatThemes, deviceContactsNumbers: deviceContactsNumbers, isInline: !rotated, showSensitiveContent: contentSettings.ignoreContentRestrictionReasons.contains("sensitive"), isSuspiciousPeer: isSuspiciousPeer)
+                let settings = MolteagramInterceptor.shared.current as! MolteagramSettingsStruct
+                let filteredRecommendedChannels = settings.hideSimilarChannels ? nil : recommendedChannels
+                let filteredAdMessage = settings.disableAds ? nil : allAdMessages.fixed
+                let filteredDynamicAdMessages = settings.disableAds ? [] : allAdMessages.opportunistic
+
+                let associatedData = extractAssociatedData(chatLocation: chatLocation, view: view, automaticDownloadNetworkType: networkType, preferredStoryHighQuality: preferredStoryHighQuality, animatedEmojiStickers: animatedEmojiStickers, additionalAnimatedEmojiStickers: additionalAnimatedEmojiStickers, subject: subject, currentlyPlayingMessageId: currentlyPlayingMessageIdAndType?.0, isCopyProtectionEnabled: isCopyProtectionEnabled, availableReactions: availableReactions, availableMessageEffects: availableMessageEffects, savedMessageTags: savedMessageTags, defaultReaction: defaultReaction.0, areStarReactionsEnabled: defaultReaction.1, isPremium: isPremium, alwaysDisplayTranscribeButton: alwaysDisplayTranscribeButton, accountPeer: accountPeer, topicAuthorId: topicAuthorId, hasBots: chatHasBots, translateToLanguage: translateToLanguage?.toLang, maxReadStoryId: maxReadStoryId, recommendedChannels: filteredRecommendedChannels, audioTranscriptionTrial: audioTranscriptionTrial, chatThemes: chatThemes, deviceContactsNumbers: deviceContactsNumbers, isInline: !rotated, showSensitiveContent: contentSettings.ignoreContentRestrictionReasons.contains("sensitive"), isSuspiciousPeer: isSuspiciousPeer)
                 
                 var includeEmbeddedSavedChatInfo = false
                 if case let .replyThread(message) = chatLocation, message.peerId == context.account.peerId, !rotated {
@@ -2139,8 +2162,8 @@ public final class ChatHistoryListNodeImpl: ListViewImpl, ChatHistoryNode, ChatH
                     customChannelDiscussionReadState: customChannelDiscussionReadState,
                     customThreadOutgoingReadState: customThreadOutgoingReadState,
                     cachedData: data.cachedData,
-                    adMessage: allAdMessages.fixed,
-                    dynamicAdMessages: allAdMessages.opportunistic,
+                    adMessage: filteredAdMessage,
+                    dynamicAdMessages: filteredDynamicAdMessages,
                     isMusicPlaylist:  isMusicPlaylist
                 )
                 let lastHeaderId = filteredEntries.last.flatMap { listMessageDateHeaderId(timestamp: $0.index.timestamp) } ?? 0
@@ -2505,7 +2528,7 @@ public final class ChatHistoryListNodeImpl: ListViewImpl, ChatHistoryNode, ChatH
                     strongSelf.chatPresentationDataPromise.set(.single(chatPresentationData))
                 }
             }
-        }).strict()
+        })
     }
     
     private func attemptReadingReactions() {

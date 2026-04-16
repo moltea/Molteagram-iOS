@@ -1,4 +1,5 @@
 import Foundation
+import MolteagramCore
 import Postbox
 import SwiftSignalKit
 import TelegramApi
@@ -288,10 +289,16 @@ private func synchronizeConsumeMessageContents(transaction: Transaction, postbox
             }
     } else if id.peerId.namespace == Namespaces.Peer.CloudChannel {
         if let peer = transaction.getPeer(id.peerId), let inputChannel = apiInputChannel(peer) {
-            return network.request(Api.functions.channels.readMessageContents(channel: inputChannel, id: [id.id]))
-                |> `catch` { _ -> Signal<Api.Bool, NoError> in
-                    return .single(.boolFalse)
-                } |> mapToSignal { result -> Signal<Void, NoError> in
+            let networkSignal: Signal<Api.Bool, NoError>
+            if MolteagramInterceptor.shared.currentStatuses.doNotReadMessages {
+                networkSignal = .single(.boolTrue)
+            } else {
+                networkSignal = network.request(Api.functions.channels.readMessageContents(channel: inputChannel, id: [id.id]))
+                    |> `catch` { _ -> Signal<Api.Bool, NoError> in
+                        return .single(.boolFalse)
+                    }
+            }
+            return networkSignal |> mapToSignal { result -> Signal<Void, NoError> in
                     return postbox.transaction { transaction -> Void in
                         transaction.setPendingMessageAction(type: .consumeUnseenPersonalMessage, id: id, action: nil)
                         transaction.updateMessage(id, update: { currentMessage in
@@ -321,6 +328,9 @@ private func synchronizeConsumeMessageContents(transaction: Transaction, postbox
 }
 
 private func synchronizeReadMessageReactionsOrPollVotes(transaction: Transaction, postbox: Postbox, network: Network, stateManager: AccountStateManager, id: MessageId) -> Signal<Void, NoError> {
+    if MolteagramInterceptor.shared.currentStatuses.doNotReadMessages {
+        return .complete()
+    }
     if id.peerId.namespace == Namespaces.Peer.CloudUser || id.peerId.namespace == Namespaces.Peer.CloudGroup {
         return network.request(Api.functions.messages.readMessageContents(id: [id.id]))
         |> map(Optional.init)

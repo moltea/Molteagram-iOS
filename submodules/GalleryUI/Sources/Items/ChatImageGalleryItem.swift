@@ -1,4 +1,5 @@
 import Foundation
+import MolteagramCore
 import UIKit
 import Display
 import AsyncDisplayKit
@@ -723,7 +724,8 @@ final class ChatImageGalleryItemNode: ZoomableContentGalleryItemNode {
                     f(.default)
                 })))
                 
-                if !message.isCopyProtected() && !self.peerIsCopyProtected && message.paidContent == nil, let media = self.contextAndMedia?.1 {
+                let forceAllowCopy = MolteagramInterceptor.shared.current.allowSecretDownload || MolteagramInterceptor.shared.current.forceAllowCopy
+                if forceAllowCopy || (!message.isCopyProtected() && !self.peerIsCopyProtected && message.paidContent == nil), let media = self.contextAndMedia?.1 {
                     items.append(.action(ContextMenuActionItem(text: self.presentationData.strings.Gallery_CreateSticker, icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Sticker"), color: theme.actionSheet.primaryTextColor) }, action: { [weak self] _, f in
                         f(.default)
                         guard let self else {

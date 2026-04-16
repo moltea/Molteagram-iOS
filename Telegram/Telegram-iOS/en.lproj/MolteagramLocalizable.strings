@@ -1,0 +1,80 @@
+"Molteagram.DisabledCopySuffix" = "Huh? Not for me! 😈";
+"Molteagram.SettingsTitle" = "Molteagram Settings";
+"Molteagram.StatusesTab" = "Statuses";
+
+"Molteagram.MessagesHeader" = "MESSAGES";
+"Molteagram.SaveDeletedMessages" = "Save deleted messages";
+
+"Molteagram.DisappearingMediaHeader" = "DISAPPEARING MEDIA";
+"Molteagram.SaveDisappearingMedia" = "Save disappearing media";
+"Molteagram.MarkingAsConsumed" = "Marking as consumed";
+"Molteagram.AllowSecretScreenshots" = "Allow screenshots";
+"Molteagram.AllowSecretDownload" = "Allow saving to gallery";
+
+"Molteagram.UiImprovementsHeader" = "UI IMPROVEMENTS";
+"Molteagram.ShowUserId" = "Show ID in user profile";
+"Molteagram.ShowGroupsId" = "Show ID in group profile";
+"Molteagram.ShowChannelsId" = "Show ID in channel profile";
+"Molteagram.DisableAds" = "Disable Ads";
+"Molteagram.HideSimilarChannels" = "Hide similar channels";
+"Molteagram.ShowSecondsInMessages" = "Seconds in messages";
+
+"Molteagram.MiscHeader" = "MISC";
+"Molteagram.ForceAllowCopy" = "Force enable sharing";
+
+"Molteagram.StatusesTitle" = "Statuses Settings";
+
+"Molteagram.BasicStatusesHeader" = "BASIC STATUSES";
+"Molteagram.DontViewStories" = "Don't view stories";
+"Molteagram.DontReadMessages" = "Don't read messages";
+"Molteagram.ForceOffline" = "Force offline";
+"Molteagram.DontSendTyping" = "Don't send typing";
+
+"Molteagram.RecordsHeader" = "RECORDS";
+"Molteagram.DisableRecordingAudio" = "Disable recording audio";
+"Molteagram.DisableRecordingRound" = "Disable recording round";
+"Molteagram.DisableRecordingVideo" = "Disable recording video";
+
+"Molteagram.UploadsHeader" = "UPLOADS";
+"Molteagram.DisableUploadingAudio" = "Disable uploading audio";
+"Molteagram.DisableUploadingDocument" = "Disable uploading document";
+"Molteagram.DisableUploadingPhoto" = "Disable uploading photo";
+"Molteagram.DisableUploadingRound" = "Disable uploading round";
+"Molteagram.DisableUploadingVideo" = "Disable uploading video";
+
+"Molteagram.MiscHeader" = "MISC";
+"Molteagram.DisableChoosingSticker" = "Disable choosing a sticker";
+"Molteagram.DisableWatchingAtEmoji" = "Disable watching at emoji";
+"Molteagram.DisablePlayingGame" = "Disable playing a game";
+"Molteagram.DisableSpeaking" = "Disable speaking";
+"Molteagram.SaveEditedMessages" = "Edit history";
+"Molteagram.DeletedMessages" = "Deleted Messages";
+"Molteagram.EditHistory" = "Edit History";
+"Molteagram.DeletedMessagesWillAppearHere" = "Deleted messages will appear here";
+"Molteagram.EditedMessagesWillAppearHere" = "Edit history will appear here";
+
+"Molteagram.Fonts" = "Fonts";
+"Molteagram.FontsTitle" = "Font Settings";
+"Molteagram.FontSystem" = "System Font";
+"Molteagram.FontMonospace" = "Monospace Font";
+"Molteagram.FontSerif" = "Serif Font";
+"Molteagram.FontRound" = "Rounded Font";
+"Molteagram.FontDefault" = "Default";
+"Molteagram.FontResetAll" = "Reset All Fonts";
+"Molteagram.FontResetConfirmTitle" = "Reset Fonts";
+"Molteagram.FontResetAllConfirmation" = "All custom fonts will be removed and defaults restored.";
+"Molteagram.FontWeightsHeader" = "WEIGHTS";
+"Molteagram.FontImport" = "Import .ttf / .otf";
+"Molteagram.Cancel" = "Cancel";
+"Molteagram.FontRestartNotice" = "Restart the app after changing fonts for changes to take full effect.";
+"Molteagram.FontSystemInfo" = "Used for most UI elements: messages, menus, buttons, navigation titles, and labels throughout the app.";
+"Molteagram.FontMonospaceInfo" = "Used for code blocks, preformatted text, and inline monospace text in messages.";
+"Molteagram.FontSerifInfo" = "Used for text styled with serif formatting in messages and instant pages.";
+"Molteagram.FontRoundInfo" = "Used for rounded UI elements such as sticker counts, badges, and compact labels.";
+"Molteagram.FontImportPack" = "Import Font Pack";
+"Molteagram.FontImportPackDialog" = "Font Pack Import";
+"Molteagram.FontImportPackSuccess" = "Imported %1$d fonts. Skipped: %2$d.";
+"Molteagram.ApiHeader" = "API SETTINGS";
+"Molteagram.ApiId" = "API ID";
+"Molteagram.ApiHash" = "API Hash";
+"Molteagram.ApiFooter" = "Changes to API credentials require a full app restart to take effect.";

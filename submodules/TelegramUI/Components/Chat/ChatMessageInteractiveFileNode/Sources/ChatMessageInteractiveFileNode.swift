@@ -900,6 +900,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                 var statusSuggestedWidthAndContinue: (CGFloat, (CGFloat) -> (CGSize, (ListViewItemUpdateAnimation) -> Void))?
                 if let statusType = arguments.dateAndStatusType {
                     var edited = false
+                    var deleted = false
                     if arguments.attributes.updatingMedia != nil {
                         edited = true
                     }
@@ -913,6 +914,8 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                     for attribute in arguments.message.attributes {
                         if let attribute = attribute as? EditedMessageAttribute {
                             edited = !attribute.isHidden
+                        } else if let attribute = attribute as? DeletedMessageAttribute {
+                            deleted = !attribute.isHidden
                         } else if let attribute = attribute as? ViewCountMessageAttribute {
                             viewCount = attribute.count
                         } else if let attribute = attribute as? ReplyThreadMessageAttribute, case .peer = arguments.chatLocation {
@@ -953,6 +956,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                         context: arguments.context,
                         presentationData: arguments.presentationData,
                         edited: edited && !arguments.presentationData.isPreview,
+                        deleted: deleted,
                         impressionCount: !arguments.presentationData.isPreview ? viewCount : nil,
                         dateText: dateText,
                         type: statusType,

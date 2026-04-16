@@ -10,6 +10,12 @@ import ContextUI
 import UndoUI
 
 extension PeerInfoScreenNode {
+    func copyId(content: String) {
+        UIPasteboard.general.string = content
+    
+        self.controller?.present(UndoOverlayController(presentationData: self.presentationData, content: .copy(text: "ID copied to clipboard"), elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .current)
+    }
+    
     func openUsernameContextMenu(node: ASDisplayNode, gesture: ContextGesture?) {
         guard let sourceNode = node as? ContextExtractedContentContainingNode else {
             return

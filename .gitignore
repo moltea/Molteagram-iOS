@@ -77,5 +77,12 @@ spm-files
 xcode-files
 .bsp/**
 .sourcekit-lsp/**
-/.claude/
 /buildbox/*
+
+# Personal build outputs
+/TestFlightBuild/
+/AltStoreBuild/
+/DistroBuild/
+
+# Personal code signing (certificates and provisioning profiles)
+/my-codesigning/

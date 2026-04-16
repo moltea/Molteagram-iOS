@@ -9,6 +9,7 @@
 import UIKit
 import GraphCore
 import AppBundle
+import Display
 
 private let cornerRadius: CGFloat = 5
 private let verticalMargins: CGFloat = 8
@@ -40,7 +41,7 @@ class ChartDetailsView: UIControl {
         clipsToBounds = true
         
         addTarget(self, action: #selector(didTapWhole), for: .touchUpInside)
-        titleLabel.font = UIFont.systemFont(ofSize: 12, weight: .bold)
+        titleLabel.font = Font.bold(12)
         arrowView.image = UIImage(bundleImageName: "Chart/arrow_right")
         arrowView.contentMode = .scaleAspectFill
 
@@ -89,14 +90,14 @@ class ChartDetailsView: UIControl {
 
         setLabelsCount(array: &prefixViews,
                        count: viewModel.showPrefixes ? labelsCount : 0,
-                       font: UIFont.systemFont(ofSize: 12, weight: .bold))
+                       font: Font.bold(12))
         setLabelsCount(array: &labelsViews,
                        count: labelsCount,
-                       font: UIFont.systemFont(ofSize: 12, weight: .regular),
+                       font: Font.regular(12),
                        textAlignment: .left)
         setLabelsCount(array: &valuesViews,
                        count: labelsCount,
-                       font: UIFont.systemFont(ofSize: 12, weight: .bold))
+                       font: Font.bold(12))
         
         var textHeight: CGFloat = 0.0
         UIView.perform(animated: animated, animations: {

@@ -80,6 +80,7 @@ public enum InteractiveMediaNodePlayWithSoundMode {
 public struct ChatMessageDateAndStatus {
     public var type: ChatMessageDateAndStatusType
     public var edited: Bool
+    public var deleted: Bool
     public var viewCount: Int?
     public var dateReactions: [MessageReaction]
     public var dateReactionPeers: [(MessageReaction.Reaction, EnginePeer)]
@@ -91,6 +92,7 @@ public struct ChatMessageDateAndStatus {
     public init(
         type: ChatMessageDateAndStatusType,
         edited: Bool,
+        deleted: Bool,
         viewCount: Int?,
         dateReactions: [MessageReaction],
         dateReactionPeers: [(MessageReaction.Reaction, EnginePeer)],
@@ -101,6 +103,7 @@ public struct ChatMessageDateAndStatus {
     ) {
         self.type = type
         self.edited = edited
+        self.deleted = deleted
         self.viewCount = viewCount
         self.dateReactions = dateReactions
         self.dateReactionPeers = dateReactionPeers
@@ -1114,6 +1117,7 @@ public final class ChatMessageInteractiveMediaNode: ASDisplayNode, GalleryItemTr
                     context: context,
                     presentationData: presentationData,
                     edited: dateAndStatus.edited && !presentationData.isPreview,
+                    deleted: dateAndStatus.deleted,
                     impressionCount: !presentationData.isPreview ? dateAndStatus.viewCount : nil,
                     dateText: dateAndStatus.dateText,
                     type: dateAndStatus.type,

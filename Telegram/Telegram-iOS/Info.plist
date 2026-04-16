@@ -47,6 +47,16 @@
 				<key>UIPrerenderedIcon</key>
 				<true/>
 			</dict>
+			<key>DefaultMolteagram</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>DefaultMolteagramIcon</string>
+					<string>DefaultMolteagramIcon</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<true/>
+			</dict>
 			<key>Blue</key>
 			<dict>
 				<key>CFBundleIconFiles</key>

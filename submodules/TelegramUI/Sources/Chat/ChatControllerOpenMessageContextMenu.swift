@@ -2,6 +2,8 @@ import Foundation
 import UIKit
 import SwiftSignalKit
 import Postbox
+import MolteagramCore
+import Molteagram
 import TelegramCore
 import AsyncDisplayKit
 import Display
@@ -88,14 +90,16 @@ extension ChatControllerImpl {
                             break
                         }
                     }
+                    let lang = self.presentationData.strings.primaryComponent.languageCode
+                    let suffix = MolteagramInterceptor.shared.current.forceAllowCopy ? " " + MolteagramStrings.get("Molteagram.DisabledCopySuffix", languageCode: lang) : ""
                     if self.presentationInterfaceState.myCopyProtectionEnabled && !isAction && !isAd {
-                        tip = .messageCopyProtection(text: self.presentationData.strings.Conversation_CopyProtectionInfoPrivateYou)
+                        tip = .messageCopyProtection(text: self.presentationData.strings.Conversation_CopyProtectionInfoPrivateYou + suffix)
                     } else if self.presentationInterfaceState.copyProtectionEnabled && !isAction && !isAd {
                         if case .scheduledMessages = self.subject {
                         } else {
                             if let peer = self.presentationInterfaceState.renderedPeer?.peer {
                                 if peer is TelegramUser {
-                                    tip = .messageCopyProtection(text: self.presentationData.strings.Conversation_CopyProtectionInfoPrivate(EnginePeer(peer).compactDisplayTitle).string)
+                                    tip = .messageCopyProtection(text: self.presentationData.strings.Conversation_CopyProtectionInfoPrivate(EnginePeer(peer).compactDisplayTitle).string + suffix)
                                 } else {
                                     var isChannel = false
                                     if let channel = self.presentationInterfaceState.renderedPeer?.peer as? TelegramChannel, case .broadcast = channel.info {

@@ -7,6 +7,7 @@ import TelegramStringFormatting
 import TextFormat
 import LocalizedPeerData
 import AccountContext
+import MolteagramCore
 
 public enum MessageTimestampStatusFormat {
     case full
@@ -90,8 +91,8 @@ public func stringForMessageTimestampStatus(accountPeerId: PeerId, message: Mess
     if let sourceAuthorInfo = message.sourceAuthorInfo, let orignalDate = sourceAuthorInfo.orignalDate {
         timestamp = orignalDate
     }
-    
-    var dateText = stringForMessageTimestamp(timestamp: timestamp, dateTimeFormat: dateTimeFormat)
+    let showSeconds = MolteagramInterceptor.shared.current.showSecondsInMessages
+    var dateText = stringForMessageTimestamp(timestamp: timestamp, dateTimeFormat: dateTimeFormat, withSeconds: showSeconds)
     if timestamp == scheduleWhenOnlineTimestamp {
         dateText = "         "
     }
@@ -149,9 +150,9 @@ public func stringForMessageTimestampStatus(accountPeerId: PeerId, message: Mess
         } else {
             dayText = strings.Date_ChatDateHeaderYear(monthAtIndex(Int(timeinfo.tm_mon), strings: strings), "\(timeinfo.tm_mday)", "\(1900 + timeinfo.tm_year)").string
         }
-        dateText = strings.Message_FullDateFormat(dayText, stringForMessageTimestamp(timestamp: timestamp, dateTimeFormat: dateTimeFormat)).string
+        dateText = strings.Message_FullDateFormat(dayText, stringForMessageTimestamp(timestamp: timestamp, dateTimeFormat: dateTimeFormat, withSeconds: showSeconds)).string
     } else if let forwardInfo = message.forwardInfo, forwardInfo.flags.contains(.isImported) {
-        dateText = strings.Message_ImportedDateFormat(dateStringForDay(strings: strings, dateTimeFormat: dateTimeFormat, timestamp: forwardInfo.date), stringForMessageTimestamp(timestamp: forwardInfo.date, dateTimeFormat: dateTimeFormat), dateText).string
+        dateText = strings.Message_ImportedDateFormat(dateStringForDay(strings: strings, dateTimeFormat: dateTimeFormat, timestamp: forwardInfo.date), stringForMessageTimestamp(timestamp: forwardInfo.date, dateTimeFormat: dateTimeFormat, withSeconds: showSeconds), dateText).string
     }
     
     var authorTitle: String?

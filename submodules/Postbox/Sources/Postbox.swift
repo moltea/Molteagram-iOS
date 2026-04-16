@@ -1,5 +1,4 @@
 import Foundation
-
 import SwiftSignalKit
 
 public protocol PostboxTypes {
@@ -142,14 +141,14 @@ public final class Transaction {
         self.postbox?.addChatListHole(groupId: groupId, hole: hole)
     }
     
-    public func deleteMessages(_ messageIds: [MessageId], forEachMedia: ((Media) -> Void)?) {
+    public func deleteMessages(_ messageIds: [MessageId], forEachMedia: ((Media) -> Void)?, forceDelete: Bool = false) {
         assert(!self.disposed)
-        self.postbox?.deleteMessages(messageIds, forEachMedia: forEachMedia)
+        self.postbox?.deleteMessages(messageIds, transaction: self, forEachMedia: forEachMedia, forceDelete: forceDelete)
     }
     
-    public func deleteMessagesInRange(peerId: PeerId, namespace: MessageId.Namespace, minId: MessageId.Id, maxId: MessageId.Id, forEachMedia: ((Media) -> Void)?) {
+    public func deleteMessagesInRange(peerId: PeerId, namespace: MessageId.Namespace, minId: MessageId.Id, maxId: MessageId.Id, forEachMedia: ((Media) -> Void)?, forceDelete: Bool = false) {
         assert(!self.disposed)
-        self.postbox?.deleteMessagesInRange(peerId: peerId, namespace: namespace, minId: minId, maxId: maxId, forEachMedia: forEachMedia)
+        self.postbox?.deleteMessagesInRange(transaction: self, peerId: peerId, namespace: namespace, minId: minId, maxId: maxId, forEachMedia: forEachMedia, forceDelete: forceDelete)
     }
     
     public func withAllMessages(peerId: PeerId, namespace: MessageId.Namespace? = nil, _ f: (Message) -> Bool) {
@@ -193,11 +192,11 @@ public final class Transaction {
         }
     }
     
-    public func deleteMessagesWithGlobalIds(_ ids: [Int32], forEachMedia: ((Media) -> Void)?) {
+    public func deleteMessagesWithGlobalIds(_ ids: [Int32], forEachMedia: ((Media) -> Void)?, forceDelete: Bool = false) {
         assert(!self.disposed)
         if let postbox = self.postbox {
             let messageIds = postbox.messageIdsForGlobalIds(ids)
-            postbox.deleteMessages(messageIds, forEachMedia: forEachMedia)
+            postbox.deleteMessages(messageIds, transaction: self, forEachMedia: forEachMedia, forceDelete: forceDelete)
         }
     }
     
@@ -2283,12 +2282,135 @@ final class PostboxImpl {
         self.chatListTable.addHole(groupId: groupId, hole: hole, operations: &self.currentChatListOperations)
     }
     
-    fileprivate func deleteMessages(_ messageIds: [MessageId], forEachMedia: ((Media) -> Void)?) {
-        self.messageHistoryTable.removeMessages(messageIds, operationsByPeerId: &self.currentOperationsByPeerId, updatedMedia: &self.currentUpdatedMedia, unsentMessageOperations: &currentUnsentOperations, updatedPeerReadStateOperations: &self.currentUpdatedSynchronizeReadStateOperations, globalTagsOperations: &self.currentGlobalTagsOperations, pendingActionsOperations: &self.currentPendingMessageActionsOperations, updatedMessageActionsSummaries: &self.currentUpdatedMessageActionsSummaries, updatedMessageTagSummaries: &self.currentUpdatedMessageTagSummaries, invalidateMessageTagSummaries: &self.currentInvalidateMessageTagSummaries, localTagsOperations: &self.currentLocalTagsOperations, timestampBasedMessageAttributesOperations: &self.currentTimestampBasedMessageAttributesOperations, forEachMedia: forEachMedia)
+    fileprivate func deleteMessages(_ messageIds: [MessageId], transaction: Transaction, forEachMedia: ((Media) -> Void)?, forceDelete: Bool = false) {
+        var saveDeletedMessages = false
+        if !saveDeletedMessages {
+            if let bundleId = Bundle.main.bundleIdentifier {
+                let suffix = ".NotificationService"
+                let baseId = bundleId.hasSuffix(suffix) ? String(bundleId.dropLast(suffix.count)) : bundleId
+                if let defaults = UserDefaults(suiteName: "group.\(baseId)"), defaults.object(forKey: "Molteagram_saveDeletedMessages") != nil {
+                    saveDeletedMessages = defaults.bool(forKey: "Molteagram_saveDeletedMessages")
+                }
+            }
+        }
+        if saveDeletedMessages && !forceDelete {
+            let date = Int32(Date().timeIntervalSince1970)
+            for id in messageIds {
+                if let index = self.messageHistoryIndexTable.getIndex(id), let intermediateMessage = self.messageHistoryTable.getMessage(index) {
+                    let message = self.renderIntermediateMessage(intermediateMessage)
+                    var updatedAttributes = message.attributes.filter { !($0 is DeletedMessageAttribute) }
+                    updatedAttributes.append(DeletedMessageAttribute(date: date, isHidden: false))
+                    var forwardInfo: StoreMessageForwardInfo? = nil
+                    if let oldInfo = message.forwardInfo {
+                        forwardInfo = StoreMessageForwardInfo(authorId: oldInfo.author?.id, sourceId: oldInfo.source?.id, sourceMessageId: oldInfo.sourceMessageId, date: oldInfo.date, authorSignature: oldInfo.authorSignature, psaType: oldInfo.psaType, flags: oldInfo.flags);
+                    }
+                    // LocalMessageTags bit 2 = molteagramDeleted — enables reactive LocalMessageTagsView subscription
+                    let molteagramDeletedTag = LocalMessageTags(rawValue: 1 << 2)
+                    let updatedMessage = StoreMessage(
+                        id: message.id,
+                        customStableId: nil,
+                        globallyUniqueId: message.globallyUniqueId,
+                        groupingKey: message.groupingKey,
+                        threadId: message.threadId,
+                        timestamp: message.timestamp,
+                        flags: StoreMessageFlags(message.flags),
+                        tags: message.tags,
+                        globalTags: message.globalTags,
+                        localTags: message.localTags.union(molteagramDeletedTag),
+                        forwardInfo: forwardInfo,
+                        authorId: message.author?.id,
+                        text: message.text,
+                        attributes: updatedAttributes,
+                        media: message.media)
+                        self.messageHistoryTable.updateMessage(id, message: updatedMessage, operationsByPeerId: &self.currentOperationsByPeerId, updatedMedia: &self.currentUpdatedMedia, unsentMessageOperations: &self.currentUnsentOperations, updatedPeerReadStateOperations: &self.currentUpdatedSynchronizeReadStateOperations, globalTagsOperations: &self.currentGlobalTagsOperations, pendingActionsOperations: &self.currentPendingMessageActionsOperations, updatedMessageActionsSummaries: &self.currentUpdatedMessageActionsSummaries, updatedMessageTagSummaries: &self.currentUpdatedMessageTagSummaries, invalidateMessageTagSummaries: &self.currentInvalidateMessageTagSummaries, localTagsOperations: &self.currentLocalTagsOperations, timestampBasedMessageAttributesOperations: &self.currentTimestampBasedMessageAttributesOperations)
+                        if let bag = self.installedStoreOrUpdateMessageActionsByPeerId[id.peerId] {
+                            for f in bag.copyItems() {
+                                f.addOrUpdate(messages: [updatedMessage], transaction: transaction)
+                            }
+                        }
+                }
+            }
+        }
+        else {
+            // Очистить историю изменений при окончательном удалении оригинального сообщения
+            let editedTag = LocalMessageTags(rawValue: 1 << 4)
+            let allEditCloneIds = self.localMessageHistoryTagsTable.get(tag: editedTag)
+            var cloneIdsToDelete: [MessageId] = []
+            let deletedIdSet = Set(messageIds)
+            for cloneId in allEditCloneIds {
+                if let index = self.messageHistoryIndexTable.getIndex(cloneId),
+                   let intermediateMsg = self.messageHistoryTable.getMessage(index) {
+                    let msg = self.renderIntermediateMessage(intermediateMsg)
+                    for attr in msg.attributes {
+                        if let editAttr = attr as? EditedCloneMessageAttribute {
+                            let origId = MessageId(peerId: PeerId(editAttr.originalPeerIdInt64), namespace: editAttr.originalNamespace, id: editAttr.originalMessageId)
+                            if deletedIdSet.contains(origId) {
+                                cloneIdsToDelete.append(cloneId)
+                            }
+                            break
+                        }
+                    }
+                }
+            }
+            if !cloneIdsToDelete.isEmpty {
+                self.messageHistoryTable.removeMessages(cloneIdsToDelete, operationsByPeerId: &self.currentOperationsByPeerId, updatedMedia: &self.currentUpdatedMedia, unsentMessageOperations: &currentUnsentOperations, updatedPeerReadStateOperations: &self.currentUpdatedSynchronizeReadStateOperations, globalTagsOperations: &self.currentGlobalTagsOperations, pendingActionsOperations: &self.currentPendingMessageActionsOperations, updatedMessageActionsSummaries: &self.currentUpdatedMessageActionsSummaries, updatedMessageTagSummaries: &self.currentUpdatedMessageTagSummaries, invalidateMessageTagSummaries: &self.currentInvalidateMessageTagSummaries, localTagsOperations: &self.currentLocalTagsOperations, timestampBasedMessageAttributesOperations: &self.currentTimestampBasedMessageAttributesOperations, forEachMedia: forEachMedia)
+            }
+            
+            self.messageHistoryTable.removeMessages(messageIds, operationsByPeerId: &self.currentOperationsByPeerId, updatedMedia: &self.currentUpdatedMedia, unsentMessageOperations: &currentUnsentOperations, updatedPeerReadStateOperations: &self.currentUpdatedSynchronizeReadStateOperations, globalTagsOperations: &self.currentGlobalTagsOperations, pendingActionsOperations: &self.currentPendingMessageActionsOperations, updatedMessageActionsSummaries: &self.currentUpdatedMessageActionsSummaries, updatedMessageTagSummaries: &self.currentUpdatedMessageTagSummaries, invalidateMessageTagSummaries: &self.currentInvalidateMessageTagSummaries, localTagsOperations: &self.currentLocalTagsOperations, timestampBasedMessageAttributesOperations: &self.currentTimestampBasedMessageAttributesOperations, forEachMedia: forEachMedia)
+        }
     }
     
-    fileprivate func deleteMessagesInRange(peerId: PeerId, namespace: MessageId.Namespace, minId: MessageId.Id, maxId: MessageId.Id, forEachMedia: ((Media) -> Void)?) {
-        self.messageHistoryTable.removeMessagesInRange(peerId: peerId, namespace: namespace, minId: minId, maxId: maxId, operationsByPeerId: &self.currentOperationsByPeerId, updatedMedia: &self.currentUpdatedMedia, unsentMessageOperations: &currentUnsentOperations, updatedPeerReadStateOperations: &self.currentUpdatedSynchronizeReadStateOperations, globalTagsOperations: &self.currentGlobalTagsOperations, pendingActionsOperations: &self.currentPendingMessageActionsOperations, updatedMessageActionsSummaries: &self.currentUpdatedMessageActionsSummaries, updatedMessageTagSummaries: &self.currentUpdatedMessageTagSummaries, invalidateMessageTagSummaries: &self.currentInvalidateMessageTagSummaries, localTagsOperations: &self.currentLocalTagsOperations, timestampBasedMessageAttributesOperations: &self.currentTimestampBasedMessageAttributesOperations, forEachMedia: forEachMedia)
+    fileprivate func deleteMessagesInRange(transaction: Transaction, peerId: PeerId, namespace: MessageId.Namespace, minId: MessageId.Id, maxId: MessageId.Id, forEachMedia: ((Media) -> Void)?, forceDelete: Bool = false) {
+        var saveDeletedMessages = false
+        if !saveDeletedMessages {
+            if let bundleId = Bundle.main.bundleIdentifier {
+                let suffix = ".NotificationService"
+                let baseId = bundleId.hasSuffix(suffix) ? String(bundleId.dropLast(suffix.count)) : bundleId
+                if let defaults = UserDefaults(suiteName: "group.\(baseId)"), defaults.object(forKey: "Molteagram_saveDeletedMessages") != nil {
+                    saveDeletedMessages = defaults.bool(forKey: "Molteagram_saveDeletedMessages")
+                }
+            }
+        }
+        if saveDeletedMessages && !forceDelete {
+            let date = Int32(Date().timeIntervalSince1970)
+            for id in minId...maxId {
+                let mId = MessageId(peerId: peerId, namespace: namespace, id: id)
+                if let index = self.messageHistoryIndexTable.getIndex(mId), let intermediateMessage = self.messageHistoryTable.getMessage(index) {
+                    let message = self.renderIntermediateMessage(intermediateMessage)
+                    var updatedAttributes = message.attributes.filter { !($0 is DeletedMessageAttribute) }
+                    updatedAttributes.append(DeletedMessageAttribute(date: date, isHidden: false))
+                    var forwardInfo: StoreMessageForwardInfo? = nil
+                    if let oldInfo = message.forwardInfo {
+                        forwardInfo = StoreMessageForwardInfo(authorId: oldInfo.author?.id, sourceId: oldInfo.source?.id, sourceMessageId: oldInfo.sourceMessageId, date: oldInfo.date, authorSignature: oldInfo.authorSignature, psaType: oldInfo.psaType, flags: oldInfo.flags);
+                    }
+                    let molteagramDeletedTag = LocalMessageTags(rawValue: 1 << 2)
+                    let updatedMessage = StoreMessage(
+                        id: message.id,
+                        customStableId: nil,
+                        globallyUniqueId: message.globallyUniqueId,
+                        groupingKey: message.groupingKey,
+                        threadId: message.threadId,
+                        timestamp: message.timestamp,
+                        flags: StoreMessageFlags(message.flags),
+                        tags: message.tags,
+                        globalTags: message.globalTags,
+                        localTags: message.localTags.union(molteagramDeletedTag),
+                        forwardInfo: forwardInfo,
+                        authorId: message.author?.id,
+                        text: message.text,
+                        attributes: updatedAttributes,
+                        media: message.media)
+                    self.messageHistoryTable.updateMessage(mId, message: updatedMessage, operationsByPeerId: &self.currentOperationsByPeerId, updatedMedia: &self.currentUpdatedMedia, unsentMessageOperations: &self.currentUnsentOperations, updatedPeerReadStateOperations: &self.currentUpdatedSynchronizeReadStateOperations, globalTagsOperations: &self.currentGlobalTagsOperations, pendingActionsOperations: &self.currentPendingMessageActionsOperations, updatedMessageActionsSummaries: &self.currentUpdatedMessageActionsSummaries, updatedMessageTagSummaries: &self.currentUpdatedMessageTagSummaries, invalidateMessageTagSummaries: &self.currentInvalidateMessageTagSummaries, localTagsOperations: &self.currentLocalTagsOperations, timestampBasedMessageAttributesOperations: &self.currentTimestampBasedMessageAttributesOperations)
+                    if let bag = self.installedStoreOrUpdateMessageActionsByPeerId[peerId] {
+                        for f in bag.copyItems() {
+                            f.addOrUpdate(messages: [updatedMessage], transaction: transaction)
+                        }
+                    }
+                }
+            }
+        } else {
+            self.messageHistoryTable.removeMessagesInRange(peerId: peerId, namespace: namespace, minId: minId, maxId: maxId, operationsByPeerId: &self.currentOperationsByPeerId, updatedMedia: &self.currentUpdatedMedia, unsentMessageOperations: &currentUnsentOperations, updatedPeerReadStateOperations: &self.currentUpdatedSynchronizeReadStateOperations, globalTagsOperations: &self.currentGlobalTagsOperations, pendingActionsOperations: &self.currentPendingMessageActionsOperations, updatedMessageActionsSummaries: &self.currentUpdatedMessageActionsSummaries, updatedMessageTagSummaries: &self.currentUpdatedMessageTagSummaries, invalidateMessageTagSummaries: &self.currentInvalidateMessageTagSummaries, localTagsOperations: &self.currentLocalTagsOperations, timestampBasedMessageAttributesOperations: &self.currentTimestampBasedMessageAttributesOperations, forEachMedia: forEachMedia)
+        }
     }
     
     fileprivate func withAllMessages(peerId: PeerId, namespace: MessageId.Namespace?, _ f: (Message) -> Bool) {
@@ -3020,6 +3142,56 @@ final class PostboxImpl {
         if let index = self.messageHistoryIndexTable.getIndex(id), let intermediateMessage = self.messageHistoryTable.getMessage(index) {
             let message = self.renderIntermediateMessage(intermediateMessage)
             if case let .update(updatedMessage) = update(message) {
+                var saveEditedMessages = false
+                if let baseId = Bundle.main.bundleIdentifier {
+                    if let defaults = UserDefaults(suiteName: "group.\(baseId)"), defaults.object(forKey: "Molteagram_saveEditedMessages") != nil {
+                        saveEditedMessages = defaults.bool(forKey: "Molteagram_saveEditedMessages")
+                    }
+                }
+                
+                let hasSignificantChange = message.text != updatedMessage.text || message.media.count != updatedMessage.media.count
+                if saveEditedMessages && hasSignificantChange {
+                    let cloneGloballyUniqueId: Int64 = Int64.random(in: 1...Int64.max)
+                    let cloneForwardInfo = message.forwardInfo.flatMap { StoreMessageForwardInfo($0) }
+                    
+                    // Build clone attributes: keep originals + add our marker attribute
+                    var cloneAttributes = message.attributes
+                    cloneAttributes.append(EditedCloneMessageAttribute(
+                        originalPeerIdInt64: message.id.peerId.toInt64(),
+                        originalNamespace: message.id.namespace,
+                        originalMessageId: message.id.id,
+                        date: Int32(Date().timeIntervalSince1970)
+                    ))
+                    
+                    let cloneStoreMessage = StoreMessage(
+                        id: .Partial(message.id.peerId, 100),
+                        customStableId: nil,
+                        globallyUniqueId: cloneGloballyUniqueId,
+                        groupingKey: message.groupingKey,
+                        threadId: message.threadId,
+                        timestamp: message.timestamp,
+                        flags: StoreMessageFlags(message.flags),
+                        tags: message.tags,
+                        globalTags: message.globalTags,
+                        localTags: message.localTags.union(LocalMessageTags(rawValue: 1 << 4)),
+                        forwardInfo: cloneForwardInfo,
+                        authorId: message.author?.id,
+                        text: message.text,
+                        attributes: cloneAttributes,
+                        media: message.media
+                    )
+                    
+                    let generatedIds = self.addMessages(transaction: transaction, messages: [cloneStoreMessage], location: .Random)
+                    if let cloneMessageId = generatedIds[cloneGloballyUniqueId] {
+                        NotificationCenter.default.post(name: NSNotification.Name("MolteagramEditedMessageCloned"), object: nil, userInfo: [
+                            "originalMessageIdInt": Int32(message.id.id),
+                            "peerIdInt": Int64(message.id.peerId.toInt64()),
+                            "cloneMessageIdInt": Int32(cloneMessageId.id),
+                            "cloneNamespaceInt": Int32(cloneMessageId.namespace)
+                        ])
+                    }
+                }
+                
                 self.messageHistoryTable.updateMessage(id, message: updatedMessage, operationsByPeerId: &self.currentOperationsByPeerId, updatedMedia: &self.currentUpdatedMedia, unsentMessageOperations: &self.currentUnsentOperations, updatedPeerReadStateOperations: &self.currentUpdatedSynchronizeReadStateOperations, globalTagsOperations: &self.currentGlobalTagsOperations, pendingActionsOperations: &self.currentPendingMessageActionsOperations, updatedMessageActionsSummaries: &self.currentUpdatedMessageActionsSummaries, updatedMessageTagSummaries: &self.currentUpdatedMessageTagSummaries, invalidateMessageTagSummaries: &self.currentInvalidateMessageTagSummaries, localTagsOperations: &self.currentLocalTagsOperations, timestampBasedMessageAttributesOperations: &self.currentTimestampBasedMessageAttributesOperations)
                 
                 if let bag = self.installedStoreOrUpdateMessageActionsByPeerId[id.peerId] {

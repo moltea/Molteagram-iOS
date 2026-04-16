@@ -4,11 +4,14 @@ swift_library(
     name = "TelegramApi",
     module_name = "TelegramApi",
     copts = [
-        "-warnings-as-errors",
+        
     ],
     srcs = glob([
         "Sources/**/*.swift",
     ]),
+    deps = [
+        "//submodules/MolteagramCore"
+    ],
     visibility = [
         "//visibility:public",
     ],

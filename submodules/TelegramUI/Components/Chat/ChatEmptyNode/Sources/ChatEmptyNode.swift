@@ -1,3 +1,4 @@
+import Molteagram
 import Foundation
 import UIKit
 import AsyncDisplayKit
@@ -783,6 +784,8 @@ private final class ChatEmptyNodeCloudChatContent: ASDisplayNode, ChatEmptyNodeC
                 titleSpacing = 5.0
             case .hashTagSearch:
                 break
+            case .deletedMessages, .editedMessages(_):
+                break
             }
         }
         
@@ -799,7 +802,7 @@ private final class ChatEmptyNodeCloudChatContent: ASDisplayNode, ChatEmptyNodeC
             var textFontSize: CGFloat = 14.0
             
             var businessLink: String?
-            
+            let lang = interfaceState.strings.primaryComponent.languageCode
             if case let .customChatContents(customChatContents) = interfaceState.subject {
                 switch customChatContents.kind {
                 case let .quickReplyMessageInput(shortcut, shortcutType):
@@ -845,6 +848,14 @@ private final class ChatEmptyNodeCloudChatContent: ASDisplayNode, ChatEmptyNodeC
                 case .hashTagSearch:
                     titleString = ""
                     strings = []
+                case .deletedMessages:
+                    centerText = true
+                    titleString = ""
+                    strings = [MolteagramStrings.get("Molteagram.DeletedMessagesWillAppearHere", languageCode: lang)]
+                case .editedMessages(_):
+                    centerText = true
+                    titleString = ""
+                    strings = [MolteagramStrings.get("Molteagram.EditedMessagesWillAppearHere", languageCode: lang)]
                 }
             } else {
                 titleString = interfaceState.strings.Conversation_CloudStorageInfo_Title

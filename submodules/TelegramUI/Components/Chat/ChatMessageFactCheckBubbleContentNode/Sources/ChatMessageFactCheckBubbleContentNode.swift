@@ -289,6 +289,7 @@ public class ChatMessageFactCheckBubbleContentNode: ChatMessageBubbleContentNode
                 let textConstrainedSize = CGSize(width: min(maxTextWidth, constrainedSize.width - (horizontalInset - 2.0) * 2.0), height: constrainedSize.height)
                 
                 var edited = false
+                var deleted = false
                 if item.attributes.updatingMedia != nil {
                     edited = true
                 }
@@ -304,6 +305,8 @@ public class ChatMessageFactCheckBubbleContentNode: ChatMessageBubbleContentNode
                 for attribute in item.message.attributes {
                     if let attribute = attribute as? EditedMessageAttribute {
                         edited = !attribute.isHidden
+                    } else if let attribute = attribute as? DeletedMessageAttribute {
+                        deleted = !attribute.isHidden
                     } else if let attribute = attribute as? ViewCountMessageAttribute {
                         viewCount = attribute.count
                     } else if let attribute = attribute as? FactCheckMessageAttribute, case let .Loaded(text, entities, _) = attribute.content {
@@ -438,6 +441,7 @@ public class ChatMessageFactCheckBubbleContentNode: ChatMessageBubbleContentNode
                         context: item.context,
                         presentationData: item.presentationData,
                         edited: edited && !item.presentationData.isPreview,
+                        deleted: deleted,
                         impressionCount: !item.presentationData.isPreview ? viewCount : nil,
                         dateText: dateText,
                         type: statusType,

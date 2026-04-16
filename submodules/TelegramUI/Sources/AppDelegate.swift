@@ -1,3 +1,4 @@
+import MolteagramCore
 import UIKit
 import SwiftSignalKit
 import Display
@@ -321,6 +322,8 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
     private var recaptchaClientsBySiteKey: [String: Promise<RecaptchaClient>] = [:]
         
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        MolteagramFontSettings.registerAllCustomFonts()
+        
         precondition(!testIsLaunched)
         testIsLaunched = true
         
@@ -529,6 +532,8 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         let baseAppBundleId = Bundle.main.bundleIdentifier!
         let appGroupName = "group.\(baseAppBundleId)"
         let maybeAppGroupUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupName)
+        
+        let _ = MolteagramCore.EditedMsgStore.get(bundleId: baseAppBundleId)
         
         let buildConfig = BuildConfig(baseAppBundleId: baseAppBundleId)
         self.buildConfig = buildConfig
@@ -948,7 +953,8 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         }, getAvailableAlternateIcons: {
             if #available(iOS 10.3, *) {
                 var icons = [
-                    PresentationAppIcon(name: "BlueIcon", imageName: "BlueIcon", isDefault: buildConfig.isAppStoreBuild),
+                    PresentationAppIcon(name: "DefaultMolteagramIcon", imageName: "DefaultMolteagramIcon", isDefault: true),
+                    PresentationAppIcon(name: "BlueIcon", imageName: "BlueIcon", isDefault: false),
                     PresentationAppIcon(name: "New2", imageName: "New2"),
                     PresentationAppIcon(name: "New1", imageName: "New1"),
                     PresentationAppIcon(name: "BlackIcon", imageName: "BlackIcon"),
@@ -961,9 +967,9 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                     icons.append(PresentationAppIcon(name: "WhiteFilledIcon", imageName: "WhiteFilledIcon"))
                 }
                 
-                icons.append(PresentationAppIcon(name: "Premium", imageName: "Premium", isPremium: true))
-                icons.append(PresentationAppIcon(name: "PremiumTurbo", imageName: "PremiumTurbo", isPremium: true))
-                icons.append(PresentationAppIcon(name: "PremiumBlack", imageName: "PremiumBlack", isPremium: true))
+                icons.append(PresentationAppIcon(name: "Premium", imageName: "Premium", isPremium: false))
+                icons.append(PresentationAppIcon(name: "PremiumTurbo", imageName: "PremiumTurbo", isPremium: false))
+                icons.append(PresentationAppIcon(name: "PremiumBlack", imageName: "PremiumBlack", isPremium: false))
                 
                 return icons
             } else {
@@ -978,7 +984,12 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         }, requestSetAlternateIconName: { name, completion in
             application.setAlternateIconName(name, completionHandler: { error in
                 if let error = error {
-                   Logger.shared.log("App \(self.episodeId)", "failed to set alternate icon with error \(error.localizedDescription)")
+                    Logger.shared.log("App \(self.episodeId)", "failed to set alternate icon with error \(error.localizedDescription)")
+                    // Queue.mainQueue().async {
+                        // let alertController = UIAlertController(title: "App Icon Error", message: "Failed to set icon '\(name ?? "Default")': \(error.localizedDescription)", preferredStyle: .alert)
+                        // alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                        // self.window?.rootViewController?.present(alertController, animated: true, completion: nil)
+                    // }
                 }
                 completion(error == nil)
             })

@@ -1,4 +1,6 @@
+import Molteagram
 import Foundation
+import MolteagramCore
 import UIKit
 import Postbox
 import TelegramCore
@@ -628,7 +630,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             
             actions.append(.separator)
             
-            if chatPresentationInterfaceState.copyProtectionEnabled {
+            if chatPresentationInterfaceState.copyProtectionEnabled && !MolteagramInterceptor.shared.current.forceAllowCopy {
             } else {
                 actions.append(.action(ContextMenuActionItem(text: chatPresentationInterfaceState.strings.Conversation_ContextMenuCopy, icon: { theme in
                     return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Copy"), color: theme.actionSheet.primaryTextColor)
@@ -935,8 +937,8 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
     
     return dataSignal
     |> deliverOnMainQueue
-    |> map { data, updatingMessageMedia, infoSummaryData, appConfig, isMessageRead, messageViewsPrivacyTips, availableReactions, translationSettings, loggingSettings, notificationSoundList, accountPeer -> ContextController.Items in
-        let isPremium = accountPeer?.isPremium ?? false
+    |> map { (data, updatingMessageMedia, infoSummaryData, appConfig, isMessageRead, messageViewsPrivacyTips, availableReactions, translationSettings, loggingSettings, notificationSoundList, accountPeer: EnginePeer?) -> ContextController.Items in
+        let isPremium = accountPeer?.isPremium == true
         
         var actions: [ContextMenuItem] = []
         
@@ -1261,7 +1263,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             }
         }
         
-        let isCopyProtected = chatPresentationInterfaceState.copyProtectionEnabled || message.isCopyProtected()
+        let isCopyProtected = (chatPresentationInterfaceState.copyProtectionEnabled || message.isCopyProtected()) && !MolteagramInterceptor.shared.current.forceAllowCopy
         if !messageText.isEmpty || (resourceAvailable && isImage) || diceEmoji != nil {
             if !isExpired {
                 if !isPoll {
@@ -1394,7 +1396,8 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             }
         }
         
-        if resourceAvailable, !message.containsSecretMedia && !isCopyProtected {
+        let forceAllowCopy = MolteagramInterceptor.shared.current.allowSecretDownload || MolteagramInterceptor.shared.current.forceAllowCopy
+        if resourceAvailable, (!message.containsSecretMedia && !isCopyProtected) || forceAllowCopy {
             var mediaReference: AnyMediaReference?
             var isVideo = false
             for media in message.media {
@@ -1539,6 +1542,22 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             })))
         }
         
+        let bundleId = Bundle.main.bundleIdentifier ?? "org.56f2af7217aed177.Telegram"
+        let cloneEntries = MolteagramCore.EditedMsgStore.get(bundleId: bundleId).historyCloneIds(for: message.id.id, peerId: message.id.peerId.toInt64())
+        if !cloneEntries.isEmpty && MolteagramInterceptor.shared.current.saveEditedMessages {
+            let lang = chatPresentationInterfaceState.strings.primaryComponent.languageCode
+            actions.append(.action(ContextMenuActionItem(text: MolteagramStrings.get("Molteagram.EditHistory", languageCode: lang), icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Edit"), color: theme.actionSheet.primaryTextColor)
+            }, action: { c, f in
+                if let navigationController = controllerInteraction.navigationController() {
+                    let contents = MolteagramEditedMessagesChatContents(context: context, originalMessageId: message.id)
+                    let historyController = context.sharedContext.makeChatController(context: context, chatLocation: .customChatContents, subject: .customChatContents(contents: contents), botStart: nil, mode: .standard(.default), params: nil)
+                    navigationController.pushViewController(historyController)
+                }
+                f(.dismissWithoutContent)
+            })))
+        }
+        
         if let message = messages.first, message.id.namespace == Namespaces.Message.Cloud, let channel = message.peers[message.id.peerId] as? TelegramChannel, channel.isMonoForum {
             var canSuggestPost = true
             for media in message.media {
@@ -1629,6 +1648,24 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
         }
         if isMigrated {
             canPin = false
+        }
+        
+        if forceAllowCopy && message.isSelfExpiring, let media = message.media.first {
+            let mediaReference = AnyMediaReference.standalone(media: media)
+            var notShow = false
+            if let image = media as? TelegramMediaImage, let _ = largestImageRepresentation(image.representations) {
+            } else { notShow = true }
+            if !notShow {
+                actions.append(.action(ContextMenuActionItem(text: chatPresentationInterfaceState.strings.Gallery_SaveImage, icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Save"), color: theme.actionSheet.primaryTextColor) }, action: { _, f in
+                    f(.default)
+                
+                    let _ = (SaveToCameraRoll.saveToCameraRoll(context: context, postbox: context.account.postbox, userLocation: .peer(message.id.peerId), mediaReference: mediaReference)
+                    |> deliverOnMainQueue).start(completed: {
+                        let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+                        controllerInteraction.presentControllerInCurrent(UndoOverlayController(presentationData: presentationData, content: .mediaSaved(text: chatPresentationInterfaceState.strings.Gallery_ImageSaved), elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), nil)
+                    })
+                })))
+            }
         }
         
         if canPin {
@@ -2185,7 +2222,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
         
         if let message = messages.first, case let .customChatContents(customChatContents) = chatPresentationInterfaceState.subject {
             switch customChatContents.kind {
-            case .hashTagSearch:
+            case .hashTagSearch, .deletedMessages, .editedMessages(_):
                 break
             case .quickReplyMessageInput:
                 actions.removeAll()
@@ -2358,6 +2395,9 @@ func chatAvailableMessageActionsImpl(engine: TelegramEngine, accountPeerId: Peer
         }
         
         func isPeerCopyProtected(_ peerId: PeerId) -> Bool? {
+            if(MolteagramInterceptor.shared.current.forceAllowCopy) {
+                return nil
+            }
             let copyProtection = copyProtectionMap[peerId]
             let myCopyProtection = myCopyProtectionMap[peerId]
             if copyProtection == true || myCopyProtection == true {

@@ -4,7 +4,7 @@ import AsyncDisplayKit
 import CoreText
 import AppBundle
 
-private let defaultFont = UIFont.systemFont(ofSize: 15.0)
+private let defaultFont = Font.regular(15.0)
 
 private let quoteIcon: UIImage = {
     return UIImage(bundleImageName: "Chat/Message/ReplyQuoteIcon")!.precomposed()

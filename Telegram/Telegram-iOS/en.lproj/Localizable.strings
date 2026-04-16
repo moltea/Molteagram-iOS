@@ -4557,6 +4557,7 @@ Sorry for the inconvenience.";
 
 "Appearance.AppIcon" = "App Icon";
 "Appearance.AppIconDefault" = "Default";
+"Appearance.AppIconDefaultMolteagramIcon" = "Molteagram";
 "Appearance.AppIconDefaultX" = "Default X";
 "Appearance.AppIconClassic" = "Classic";
 "Appearance.AppIconClassicX" = "Classic X";

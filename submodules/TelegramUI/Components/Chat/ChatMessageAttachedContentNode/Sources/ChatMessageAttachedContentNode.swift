@@ -684,6 +684,7 @@ public final class ChatMessageAttachedContentNode: ASDisplayNode {
                 }
                 
                 var edited = false
+                var deleted = false
                 if attributes.updatingMedia != nil {
                     edited = true
                 }
@@ -697,6 +698,8 @@ public final class ChatMessageAttachedContentNode: ASDisplayNode {
                 for attribute in message.attributes {
                     if let attribute = attribute as? EditedMessageAttribute {
                         edited = !attribute.isHidden
+                    } else if let attribute = attribute as? DeletedMessageAttribute {
+                        deleted = !attribute.isHidden
                     } else if let attribute = attribute as? ViewCountMessageAttribute {
                         viewCount = attribute.count
                     } else if let attribute = attribute as? ReplyThreadMessageAttribute, case .peer = chatLocation {
@@ -748,6 +751,7 @@ public final class ChatMessageAttachedContentNode: ASDisplayNode {
                                 context: context,
                                 presentationData: presentationData,
                                 edited: edited && !isPreview,
+                                deleted: deleted,
                                 impressionCount: !isPreview ? viewCount : nil,
                                 dateText: dateText,
                                 type: statusType,

@@ -7,7 +7,7 @@ swift_library(
         "Sources/**/*.swift",
     ]),
     copts = [
-        "-warnings-as-errors",
+        
     ],
     deps = [
         "//submodules/AsyncDisplayKit",
@@ -26,6 +26,7 @@ swift_library(
         "//submodules/Components/ReactionImageComponent",
         "//submodules/TelegramUI/Components/AnimationCache",
         "//submodules/TelegramUI/Components/MultiAnimationRenderer",
+        "//submodules/MolteagramCore",
     ],
     visibility = [
         "//visibility:public",

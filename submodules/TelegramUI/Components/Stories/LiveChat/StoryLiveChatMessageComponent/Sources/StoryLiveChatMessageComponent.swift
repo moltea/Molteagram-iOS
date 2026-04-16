@@ -611,9 +611,9 @@ public final class StoryLiveChatMessageComponent: Component {
         let width: CGFloat = -0.1
         let descriptor: UIFontDescriptor
         if #available(iOS 14.0, *) {
-            descriptor = UIFont.systemFont(ofSize: 10.0).fontDescriptor
+            descriptor = Font.regular(10.0).fontDescriptor
         } else {
-            descriptor = UIFont.systemFont(ofSize: 10.0, weight: UIFont.Weight.semibold).fontDescriptor
+            descriptor = Font.semibold(10.0).fontDescriptor
         }
         let symbolicTraits = descriptor.symbolicTraits
         var updatedDescriptor: UIFontDescriptor? = descriptor.withSymbolicTraits(symbolicTraits)

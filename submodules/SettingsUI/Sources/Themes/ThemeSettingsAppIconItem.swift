@@ -402,6 +402,8 @@ class ThemeSettingsAppIconItemNode: ListViewItemNode, ItemListItemNode {
                                     name = item.strings.Appearance_AppIconBlack
                                 case "PremiumTurbo":
                                     name = item.strings.Appearance_AppIconTurbo
+                                case "DefaultMolteagramIcon":
+                                    name = "Molteagram"
                                 default:
                                     name = icon.name
                             }

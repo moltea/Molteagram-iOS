@@ -1624,7 +1624,6 @@ private func notificationSearchableItems(context: AccountContext, settings: Glob
                 presentNotificationSettings(context, present, nil)
             }
         ),
-        
         SettingsSearchableItem(
             id: "notifications/accounts",
             icon: icon,

@@ -2,6 +2,7 @@ import Foundation
 import Postbox
 import SwiftSignalKit
 import TelegramApi
+import MolteagramCore
 
 public class AdPeer: Equatable {
     public let opaqueId: Data
@@ -39,6 +40,9 @@ public class AdPeer: Equatable {
 }
 
 func _internal_searchAdPeers(account: Account, query: String) -> Signal<[AdPeer], NoError> {
+    if (MolteagramInterceptor.shared.current as? MolteagramSettingsStruct)?.disableAds == true {
+        return .single([])
+    }
     return account.network.request(Api.functions.contacts.getSponsoredPeers(q: query))
     |> map(Optional.init)
     |> `catch` { _ in

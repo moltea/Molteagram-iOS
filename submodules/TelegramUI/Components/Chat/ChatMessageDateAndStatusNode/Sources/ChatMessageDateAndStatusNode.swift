@@ -183,6 +183,7 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
         var context: AccountContext
         var presentationData: ChatPresentationData
         var edited: Bool
+        var deleted: Bool
         var impressionCount: Int?
         var dateText: String
         var type: ChatMessageDateAndStatusType
@@ -209,6 +210,7 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
             context: AccountContext,
             presentationData: ChatPresentationData,
             edited: Bool,
+            deleted: Bool,
             impressionCount: Int?,
             dateText: String,
             type: ChatMessageDateAndStatusType,
@@ -234,6 +236,7 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
             self.context = context
             self.presentationData = presentationData
             self.edited = edited
+            self.deleted = deleted
             self.impressionCount = impressionCount == 0 ? nil : impressionCount
             self.dateText = dateText
             self.type = type
@@ -266,6 +269,7 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
     private var clockMinNode: ASImageNode?
     private let dateNode: TextNode
     private var impressionIcon: ASImageNode?
+    private var deletedIcon: ASImageNode?
     private var reactionNodes: [MessageReaction.Reaction: StatusReactionNode] = [:]
     private let reactionButtonsContainer = ReactionButtonsAsyncLayoutContainer()
     private var reactionButtonNode: HighlightTrackingButtonNode?
@@ -327,6 +331,7 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
         
         var currentBackgroundNode = self.backgroundNode
         var currentImpressionIcon = self.impressionIcon
+        var currentDeletedIcon = self.deletedIcon
         var currentRepliesIcon = self.repliesIcon
         var currentStarsIcon = self.starsIcon
 
@@ -574,6 +579,26 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
                 currentImpressionIcon = nil
             }
             
+            var deletedImage: UIImage?
+            let deletedSize = CGSize(width: 16.0, height: 16.0)
+            var deletedWidth: CGFloat = 0.0
+            if arguments.deleted {
+                deletedImage = generateTintedImage(image: UIImage(bundleImageName: "Chat/Input/Accessory Panels/MessageSelectionTrash"), color: dateColor, backgroundColor: nil)
+                if deletedImage != nil {
+                    if currentDeletedIcon == nil {
+                        let iconNode = ASImageNode()
+                        iconNode.isLayerBacked = false
+                        iconNode.displayWithoutProcessing = true
+                        iconNode.displaysAsynchronously = false
+                        currentDeletedIcon = iconNode
+                    }
+                    deletedWidth = deletedSize.width + 4.0
+                }
+            } else {
+                currentDeletedIcon = nil
+            }
+            
+            
             var repliesIconSize = CGSize()
             if let repliesImage = repliesImage {
                 if currentRepliesIcon == nil {
@@ -676,9 +701,9 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
                         let checkSize = loadedCheckFullImage!.size
                         
                         if read {
-                            checkReadFrame = CGRect(origin: CGPoint(x: leftInset + impressionWidth + date.size.width + 5.0 + statusWidth - checkSize.width, y: 3.0 + offset), size: checkSize)
+                            checkReadFrame = CGRect(origin: CGPoint(x: leftInset + impressionWidth + date.size.width + 5.0 + statusWidth + deletedWidth - checkSize.width, y: 3.0 + offset), size: checkSize)
                         }
-                        checkSentFrame = CGRect(origin: CGPoint(x: leftInset + impressionWidth + date.size.width + 5.0 + statusWidth - checkSize.width - checkOffset, y: 3.0 + offset), size: checkSize)
+                        checkSentFrame = CGRect(origin: CGPoint(x: leftInset + impressionWidth + date.size.width + 5.0 + statusWidth + deletedWidth - checkSize.width - checkOffset, y: 3.0 + offset), size: checkSize)
                     }
                 case .Failed:
                     statusWidth = 0.0
@@ -767,7 +792,7 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
             
             leftInset += reactionInset
             
-            let layoutSize = CGSize(width: leftInset + impressionWidth + date.size.width + statusWidth + backgroundInsets.left + backgroundInsets.right, height: date.size.height + backgroundInsets.top + backgroundInsets.bottom)
+            let layoutSize = CGSize(width: leftInset + impressionWidth + date.size.width + statusWidth + deletedWidth + backgroundInsets.left + backgroundInsets.right, height: date.size.height + backgroundInsets.top + backgroundInsets.bottom)
             
             let verticalReactionsInset: CGFloat
             let verticalInset: CGFloat
@@ -1091,6 +1116,24 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
                         }
                         
                         let _ = dateApply()
+                        
+                        if let currentDeletedIcon = currentDeletedIcon {
+                            let deletedIconFrame = CGRect(origin: CGPoint(x: leftOffset + leftInset + backgroundInsets.left + date.size.width + 3.0, y: backgroundInsets.top + offset + verticalInset + floor((date.size.height - deletedSize.height) / 2.0)), size: deletedSize)
+                            currentDeletedIcon.displaysAsynchronously = false
+                            if currentDeletedIcon.image !== deletedImage {
+                                currentDeletedIcon.image = deletedImage
+                            }
+                            if currentDeletedIcon.supernode == nil {
+                                strongSelf.deletedIcon = currentDeletedIcon
+                                strongSelf.addSubnode(currentDeletedIcon)
+                                currentDeletedIcon.frame = deletedIconFrame
+                            } else {
+                                animation.animator.updateFrame(layer: currentDeletedIcon.layer, frame: deletedIconFrame, completion: nil)
+                            }
+                        } else if let deletedIcon = strongSelf.deletedIcon {
+                            deletedIcon.removeFromSupernode()
+                            strongSelf.deletedIcon = nil
+                        }
                         
                         if let currentImpressionIcon = currentImpressionIcon {
                             let impressionIconFrame = CGRect(origin: CGPoint(x: leftOffset + leftInset + backgroundInsets.left, y: backgroundInsets.top + 1.0 + offset + verticalInset + floor((date.size.height - impressionSize.height) / 2.0)), size: impressionSize)

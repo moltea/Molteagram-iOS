@@ -1375,11 +1375,13 @@ private final class NotificationServiceHandler {
                                         } else {
                                             content.body = "Incoming Call"
                                         }
-                                        
+
                                         updateCurrentContent(content)
                                         completed()
                                     }
                                 })
+                            } else {
+                                completed()
                             }
                         case let .groupCall(groupCallData):
                             if let stateManager = strongSelf.stateManager {
@@ -1420,11 +1422,13 @@ private final class NotificationServiceHandler {
                                         } else {
                                             content.body = "Incoming Call"
                                         }
-                                        
+
                                         updateCurrentContent(content)
                                         completed()
                                     }
                                 })
+                            } else {
+                                completed()
                             }
                         case .logout:
                             Logger.shared.log("NotificationService \(episode)", "Will logout")
@@ -2401,9 +2405,9 @@ private final class NotificationServiceHandler {
                                 let completeRemoval: () -> Void = {
                                     let content = NotificationContent(isLockedMessage: nil)
                                     Logger.shared.log("NotificationService \(episode)", "Updating content to \(content)")
-                                    
+
                                     updateCurrentContent(content)
-                                    
+
                                     completed()
                                 }
                                 
@@ -2438,6 +2442,34 @@ private final class NotificationServiceHandler {
                                         if let peerIdString = notification.request.content.userInfo["peerId"] as? String, let peerIdValue = Int64(peerIdString), let messageIdString = notification.request.content.userInfo["msg_id"] as? String, let messageIdValue = Int32(messageIdString) {
                                             if PeerId(peerIdValue) == id.peerId && messageIdValue <= id.id {
                                                 removeIdentifiers.append(notification.request.identifier)
+                                            }
+                                        } else if let encryptedString = notification.request.content.userInfo["p"] as? String {
+                                            var normalized = encryptedString
+                                                .replacingOccurrences(of: "-", with: "+")
+                                                .replacingOccurrences(of: "_", with: "/")
+                                            while normalized.count % 4 != 0 { normalized.append("=") }
+                                            if let data = Data(base64Encoded: normalized),
+                                               let decrypted = decryptedNotificationPayload(key: notificationsKey, data: data),
+                                               let json = try? JSONSerialization.jsonObject(with: decrypted, options: []) as? [String: Any] {
+                                                var notifPeerId: PeerId?
+                                                if let v = (json["from_id"] as? String).flatMap(Int64.init) {
+                                                    notifPeerId = PeerId(namespace: Namespaces.Peer.CloudUser, id: PeerId.Id._internalFromInt64Value(v))
+                                                } else if let v = (json["chat_id"] as? String).flatMap(Int64.init) {
+                                                    notifPeerId = PeerId(namespace: Namespaces.Peer.CloudGroup, id: PeerId.Id._internalFromInt64Value(v))
+                                                } else if let v = (json["channel_id"] as? String).flatMap(Int64.init) {
+                                                    notifPeerId = PeerId(namespace: Namespaces.Peer.CloudChannel, id: PeerId.Id._internalFromInt64Value(v))
+                                                }
+                                                if let notifPeerId = notifPeerId, notifPeerId == id.peerId {
+                                                    let msgIdMatches: Bool
+                                                    if let msgId = (json["msg_id"] as? String).flatMap(Int32.init) {
+                                                        msgIdMatches = msgId <= id.id
+                                                    } else {
+                                                        msgIdMatches = true
+                                                    }
+                                                    if msgIdMatches {
+                                                        removeIdentifiers.append(notification.request.identifier)
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -2522,6 +2554,7 @@ private final class NotificationServiceHandler {
     }
 
     deinit {
+        self.notificationKeyDisposable.dispose()
         self.pollDisposable.dispose()
         self.stateManager?.network.shouldKeepConnection.set(.single(false))
     }
@@ -2596,7 +2629,7 @@ final class NotificationService: UNNotificationServiceExtension {
     override func serviceExtensionTimeWillExpire() {
         if let contentHandler = self.contentHandler {
             self.contentHandler = nil
-            
+
             Logger.shared.log("NotificationService \(self.episode ?? "???")", "Completing due to serviceExtensionTimeWillExpire")
             
             if let content = self.content.with({ $0 }) {

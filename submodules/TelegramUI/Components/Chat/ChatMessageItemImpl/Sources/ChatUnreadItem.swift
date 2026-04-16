@@ -10,7 +10,7 @@ import WallpaperBackgroundNode
 import ChatControllerInteraction
 import ChatMessageItemCommon
 
-private let titleFont = UIFont.systemFont(ofSize: 13.0)
+private let titleFont = Font.regular(13.0)
 
 public class ChatUnreadItem: ListViewItem {
     public let index: MessageIndex

@@ -22,7 +22,7 @@ func addMessageMediaResourceIdsToRemove(message: Message, resourceIds: inout [Me
     }
 }
 
-public func _internal_deleteMessages(transaction: Transaction, mediaBox: MediaBox, ids: [MessageId], deleteMedia: Bool = true, manualAddMessageThreadStatsDifference: ((MessageThreadKey, Int, Int) -> Void)? = nil) {
+public func _internal_deleteMessages(transaction: Transaction, mediaBox: MediaBox, ids: [MessageId], deleteMedia: Bool = true, forceDelete: Bool = false, manualAddMessageThreadStatsDifference: ((MessageThreadKey, Int, Int) -> Void)? = nil) {
     var resourceIds: [MediaResourceId] = []
     if deleteMedia {
         for id in ids {
@@ -52,8 +52,7 @@ public func _internal_deleteMessages(transaction: Transaction, mediaBox: MediaBo
             }
         }
     }
-    transaction.deleteMessages(ids, forEachMedia: { _ in
-    })
+    transaction.deleteMessages(ids, forEachMedia: { _ in }, forceDelete: forceDelete)
 }
 
 func _internal_deleteAllMessagesWithAuthor(transaction: Transaction, mediaBox: MediaBox, peerId: PeerId, authorId: PeerId, namespace: MessageId.Namespace) {

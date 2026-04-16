@@ -5,6 +5,7 @@ import SwiftSignalKit
 import Display
 import AsyncDisplayKit
 import TelegramCore
+import MolteagramCore
 import SafariServices
 import MobileCoreServices
 import Intents
@@ -701,7 +702,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
                         return interfaceState.withUpdatedEffectiveInputState(ChatTextInputState(inputText: chatInputStateStringWithAppliedEntities(link.message, entities: link.entities)))
                     })
                 }
-            case .hashTagSearch:
+            case .hashTagSearch, .deletedMessages, .editedMessages(_):
                 break
             }
         }
@@ -780,7 +781,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
                         
             if case let .customChatContents(customChatContents) = strongSelf.presentationInterfaceState.subject {
                 switch customChatContents.kind {
-                case .hashTagSearch:
+                case .hashTagSearch, .deletedMessages, .editedMessages(_):
                     return true
                 case let .quickReplyMessageInput(_, shortcutType):
                     if let historyView = strongSelf.chatDisplayNode.historyNode.originalHistoryView, historyView.entries.isEmpty {
@@ -5951,6 +5952,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
         })
         
         if let chatPeerId = chatLocation.peerId {
+
             self.nameColorDisposable = (context.engine.data.subscribe(
                 TelegramEngine.EngineData.Item.Peer.Peer(id: context.account.peerId),
                 TelegramEngine.EngineData.Item.Peer.Peer(id: chatPeerId)
@@ -7962,7 +7964,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
         self.moreBarButton.play()
         self.moreBarButton.contextAction?(self.moreBarButton.containerNode, nil)
     }
-    
+
     public func beginClearHistory(type: InteractiveHistoryClearingType) {
         guard case let .peer(peerId) = self.chatLocation else {
             return

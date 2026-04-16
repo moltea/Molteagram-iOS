@@ -235,7 +235,7 @@ func updateChatPresentationInterfaceStateImpl(
     var canHaveUrlPreview = true
     if case let .customChatContents(customChatContents) = updatedChatPresentationInterfaceState.subject {
         switch customChatContents.kind {
-        case .hashTagSearch:
+        case .hashTagSearch, .deletedMessages, .editedMessages(_):
             break
         case .quickReplyMessageInput:
             break

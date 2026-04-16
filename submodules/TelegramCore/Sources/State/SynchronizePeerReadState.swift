@@ -2,7 +2,7 @@ import Foundation
 import Postbox
 import TelegramApi
 import SwiftSignalKit
-
+import MolteagramCore
 
 private enum PeerReadStateMarker: Equatable {
     case Global(Int32)
@@ -256,6 +256,9 @@ private func pushPeerReadState(network: Network, postbox: Postbox, stateManager:
                     |> mapToSignal { _ -> Signal<Void, NoError> in
                         return .complete()
                     }
+                    if MolteagramInterceptor.shared.currentStatuses.doNotReadMessages {
+                        return .complete()
+                    }
                     if markedUnread {
                         pushSignal = pushSignal
                         |> then(network.request(Api.functions.messages.markDialogUnread(flags: 1 << 0, parentPeer: nil, peer: .inputDialogPeer(.init(peer: inputPeer))))
@@ -279,6 +282,9 @@ private func pushPeerReadState(network: Network, postbox: Postbox, stateManager:
             default:
                 switch readState {
                 case let .idBased(maxIncomingReadId, _, _, _, markedUnread):
+                    if MolteagramInterceptor.shared.currentStatuses.doNotReadMessages {
+                        return .complete()
+                    }
                     var pushSignal: Signal<Void, NoError> = network.request(Api.functions.messages.readHistory(peer: inputPeer, maxId: maxIncomingReadId))
                     |> map(Optional.init)
                     |> `catch` { _ -> Signal<Api.messages.AffectedMessages?, NoError> in

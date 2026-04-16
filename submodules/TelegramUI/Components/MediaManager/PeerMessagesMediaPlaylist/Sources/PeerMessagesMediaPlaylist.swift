@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import MolteagramCore
 import Display
 import SwiftSignalKit
 import Postbox
@@ -911,7 +912,8 @@ public final class PeerMessagesMediaPlaylist: SharedMediaPlaylist {
     }
     
     public func onItemPlaybackStarted(_ item: SharedMediaPlaylistItem) {
-        if let item = item as? MessageMediaPlaylistItem {
+        let disableMarkingAsConsumed = MolteagramInterceptor.shared.current.disableMarkingAsConsumed
+        if !disableMarkingAsConsumed, let item = item as? MessageMediaPlaylistItem {
             switch self.messagesLocation {
                 case .recentActions:
                     return

@@ -131,6 +131,7 @@ public struct PresentationResourcesSettings {
     public static let powerSaving = renderSettingsIcon(name: "Item List/Icons/PowerSaving", backgroundColors: [colorOrange])
     public static let business = renderSettingsIcon(name: "Item List/Icons/Business", backgroundColors: [UIColor(rgb: 0xA95CE3), UIColor(rgb: 0xF16B80)])
     public static let myProfile = renderSettingsIcon(name: "Item List/Icons/Profile", backgroundColors: [colorRed])
+    public static let icons = renderSettingsIcon(name: "Item List/Icons/Icons", backgroundColors: [UIColor(rgb: 0x0)])
     
     public static let storageUsage = renderSettingsIcon(name: "Item List/Icons/Pie", backgroundColors: [colorOrange])
     public static let dataUsage = renderSettingsIcon(name: "Item List/Icons/Stats", backgroundColors: [colorPurple])
@@ -376,6 +377,7 @@ public struct PresentationResourcesSettings {
     public static let recentActions = renderSettingsIcon(name: "Item List/Icons/View", backgroundColors: [colorOrange])
     public static let permissions = renderSettingsIcon(name: "Item List/Icons/Key", backgroundColors: [colorGray])
     public static let autoTranslate = renderSettingsIcon(name: "Item List/Icons/Translation", backgroundColors: [colorPurple])
+    public static let fonts = renderSettingsIcon(name: "Item List/Icons/Appearance", backgroundColors: [colorPurple])
     public static let emojiStatus = renderSettingsIcon(name: "Item List/Icons/Status", backgroundColors: [colorBlue])
     public static let location = renderSettingsIcon(name: "Item List/Icons/Location", backgroundColors: [colorLightBlue])
     public static let groupRequests = renderAttachAppIcon(iconImage: UIImage(bundleImageName: "Chat/Info/GroupRequestsIcon"))

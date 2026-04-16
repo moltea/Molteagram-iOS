@@ -720,7 +720,7 @@ final class DataUsageScreenComponent: Component {
                     self.doneSupLabel = doneSupLabel
                 }
                 
-                let doneLabelSize = doneLabel.update(transition: doneLabelTransition, component: AnyComponent(Text(text: "0", font: UIFont.systemFont(ofSize: 50.0, weight: UIFont.Weight(0.25)), color: checkColor)), environment: {}, containerSize: CGSize(width: 100.0, height: 100.0))
+                let doneLabelSize = doneLabel.update(transition: doneLabelTransition, component: AnyComponent(Text(text: "0", font: Font.with(size: 50.0, weight: UIFont.Weight(0.25)), color: checkColor)), environment: {}, containerSize: CGSize(width: 100.0, height: 100.0))
                 let doneLabelFrame = CGRect(origin: CGPoint(x: pieChartFrame.minX + floor((pieChartFrame.width - doneLabelSize.width) * 0.5), y: pieChartFrame.minY + 16.0), size: doneLabelSize)
                 if let doneLabelView = doneLabel.view {
                     var animateIn = false

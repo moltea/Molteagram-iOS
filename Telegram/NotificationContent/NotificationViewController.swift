@@ -32,7 +32,7 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
             }
             
             let rootPath = appGroupUrl.path + "/telegram-data"
-            
+
             let deviceSpecificEncryptionParameters = BuildConfig.deviceSpecificEncryptionParameters(rootPath, baseAppBundleId: baseAppBundleId)
             let encryptionParameters: (Data, Data) = (deviceSpecificEncryptionParameters.key, deviceSpecificEncryptionParameters.salt)
             

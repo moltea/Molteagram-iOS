@@ -1,4 +1,6 @@
 import Foundation
+import Molteagram
+import MolteagramCore
 import UIKit
 import AsyncDisplayKit
 import Postbox
@@ -292,6 +294,54 @@ public final class SharedAccountContextImpl: SharedAccountContext {
     
     init(mainWindow: Window1?, sharedContainerPath: String, basePath: String, encryptionParameters: ValueBoxEncryptionParameters, accountManager: AccountManager<TelegramAccountManagerTypes>, appLockContext: AppLockContext, notificationController: NotificationContainerController?, applicationBindings: TelegramApplicationBindings, initialPresentationDataAndSettings: InitialPresentationDataAndSettings, networkArguments: NetworkInitializationArguments, hasInAppPurchases: Bool, rootPath: String, legacyBasePath: String?, apsNotificationToken: Signal<Data?, NoError>, voipNotificationToken: Signal<Data?, NoError>, firebaseSecretStream: Signal<[String: String], NoError>, setNotificationCall: @escaping (PresentationCall?) -> Void, navigateToChat: @escaping (AccountRecordId, PeerId, MessageId?, Bool) -> Void, displayUpgradeProgress: @escaping (Float?) -> Void = { _ in }, appDelegate: AppDelegate?, testingEnvironment: Bool = false) {
         assert(Queue.mainQueue().isCurrent())
+        
+        if !testHasInstance {
+            let molteagramSettingsSignal = accountManager.sharedData(keys: [MolteagramSpecificSharedDataKeys.molteagramSettings])
+                |> map { sharedData -> MolteagramSettings in
+                    if let settings = sharedData.entries[MolteagramSpecificSharedDataKeys.molteagramSettings]?.get(MolteagramSettings.self) {
+                        return settings
+                    } else {
+                        return MolteagramSettings.defaultSettings
+                    }
+                }
+                |> distinctUntilChanged
+            
+            GlobalMolteagramState.shared.disposable.set(molteagramSettingsSignal.start(next: { settings in
+                GlobalMolteagramState.shared.current = settings
+            }))
+            
+            let molteagramStatusesSettingsSignal = accountManager.sharedData(keys: [MolteagramSpecificSharedDataKeys.molteagramStatusesSettings])
+                |> map { sharedData -> MolteagramStatusesSettings in
+                    if let statusesSettings = sharedData.entries[MolteagramSpecificSharedDataKeys.molteagramStatusesSettings]?.get(MolteagramStatusesSettings.self) {
+                        return statusesSettings
+                    } else {
+                        return MolteagramStatusesSettings.defaultSettings
+                    }
+                }
+                |> distinctUntilChanged
+            
+            GlobalMolteagramState.shared.disposableStatuses.set(molteagramStatusesSettingsSignal.start(next: { statusesSettings in
+                GlobalMolteagramState.shared.currentStatuses = statusesSettings
+                let isTimerRunning = GlobalMolteagramState.shared.offlineTimer != nil
+                
+                if statusesSettings.doNotSendOnline {
+                    if !isTimerRunning {
+                        let timer = SwiftSignalKit.Timer(timeout: 60.0, repeat: true, completion: {
+                            GlobalMolteagramState.shared.performOfflinePing?()
+                        }, queue: .mainQueue())
+                        GlobalMolteagramState.shared.offlineTimer = timer
+                        timer.start()
+                    }
+                } else {
+                    if isTimerRunning {
+                        GlobalMolteagramState.shared.offlineTimer?.invalidate()
+                        GlobalMolteagramState.shared.offlineTimer = nil
+                    }
+                }
+            }))
+            
+            MolteagramInterceptor.shared = GlobalMolteagramState.shared
+        }
         
         precondition(!testHasInstance)
         testHasInstance = true

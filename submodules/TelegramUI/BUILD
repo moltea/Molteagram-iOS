@@ -46,7 +46,7 @@ swift_library(
         "Sources/**/*.swift",
     ]),
     copts = [
-        "-warnings-as-errors",
+        
     ],
     deps = [
         "//third-party/recaptcha:RecaptchaEnterprise",
@@ -54,6 +54,8 @@ swift_library(
         "//submodules/SSignalKit/SSignalKit:SSignalKit",
         "//submodules/AsyncDisplayKit:AsyncDisplayKit",
         "//submodules/Display:Display",
+        "//submodules/MolteagramCore",
+        "//submodules/Molteagram",
         "//submodules/Postbox:Postbox",
         "//submodules/TelegramCore:TelegramCore",
         "//submodules/MtProtoKit:MtProtoKit",

@@ -189,6 +189,7 @@ public class ChatMessageMapBubbleContentNode: ChatMessageBubbleContentNode {
                 let (textLayout, textApply) = makeTextLayout(TextNodeLayoutArguments(attributedString: textString, backgroundColor: nil, maximumNumberOfLines: 2, truncationType: .end, constrainedSize: CGSize(width: max(1.0, maxTextWidth), height: CGFloat.greatestFiniteMagnitude), alignment: .natural, cutout: nil, insets: UIEdgeInsets()))
                 
                 var edited = false
+                var deleted = false
                 if item.attributes.updatingMedia != nil {
                     edited = true
                 }
@@ -202,6 +203,8 @@ public class ChatMessageMapBubbleContentNode: ChatMessageBubbleContentNode {
                 for attribute in item.message.attributes {
                     if let attribute = attribute as? EditedMessageAttribute {
                         edited = !attribute.isHidden
+                    } else if let attribute = attribute as? DeletedMessageAttribute {
+                        deleted = !attribute.isHidden
                     } else if let attribute = attribute as? ViewCountMessageAttribute {
                         viewCount = attribute.count
                     } else if let attribute = attribute as? ReplyThreadMessageAttribute, case .peer = item.chatLocation {
@@ -276,6 +279,7 @@ public class ChatMessageMapBubbleContentNode: ChatMessageBubbleContentNode {
                         context: item.context,
                         presentationData: item.presentationData,
                         edited: edited,
+                        deleted: deleted,
                         impressionCount: !item.presentationData.isPreview ? viewCount : nil,
                         dateText: dateText,
                         type: statusType,

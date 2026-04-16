@@ -1,4 +1,5 @@
 import Foundation
+import MolteagramCore
 import UIKit
 import Display
 import SwiftSignalKit

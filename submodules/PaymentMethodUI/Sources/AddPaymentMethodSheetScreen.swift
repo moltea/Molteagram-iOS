@@ -61,7 +61,7 @@ private final class AddPaymentMethodSheetContent: CombinedComponent {
             
             let title = title.update(
                 component: MultilineTextComponent(
-                    text: .plain(NSAttributedString(string: "Payment Method", font: UIFont.boldSystemFont(ofSize: 17.0), textColor: .black)),
+                    text: .plain(NSAttributedString(string: "Payment Method", font: Font.bold(17.0), textColor: .black)),
                     horizontalAlignment: .center,
                     maximumNumberOfLines: 1
                 ),
@@ -72,7 +72,7 @@ private final class AddPaymentMethodSheetContent: CombinedComponent {
             
             let text = text.update(
                 component: MultilineTextComponent(
-                    text: .plain(NSAttributedString(string: "Add your debit or credit card to buy goods and services on Telegram.", font: UIFont.systemFont(ofSize: 15.0), textColor: .gray)),
+                    text: .plain(NSAttributedString(string: "Add your debit or credit card to buy goods and services on Telegram.", font: Font.regular(15.0), textColor: .gray)),
                     horizontalAlignment: .center,
                     maximumNumberOfLines: 0
                 ),
@@ -104,7 +104,7 @@ private final class AddPaymentMethodSheetContent: CombinedComponent {
                     content: AnyComponent(
                         Text(
                             text: "Cancel",
-                            font: UIFont.systemFont(ofSize: 17.0),
+                            font: Font.regular(17.0),
                             color: environment.theme.list.itemAccentColor
                         )
                     ),

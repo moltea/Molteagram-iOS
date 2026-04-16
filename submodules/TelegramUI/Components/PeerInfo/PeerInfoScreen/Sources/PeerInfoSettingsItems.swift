@@ -153,6 +153,10 @@ func settingsItems(data: PeerInfoScreenData?, context: AccountContext, presentat
             interaction.openSettings(.profile)
         }))
         
+        items[.myProfile]!.append(PeerInfoScreenDisclosureItem(id: 501, text: "Molteagram", icon: PresentationResourcesSettings.icons, action: {
+            interaction.openSettings(.molteagramSettings)
+        }))
+        
         if !settings.proxySettings.servers.isEmpty {
             let proxyType: String
             if settings.proxySettings.enabled, let activeServer = settings.proxySettings.activeServer {

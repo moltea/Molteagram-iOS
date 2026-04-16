@@ -14,6 +14,7 @@ import AsyncDisplayKit
 import LocationResources
 import AttachmentUI
 import WebUI
+import MolteagramCore
 import AvatarNode
 import PeerNameColorItem
 import BoostLevelIconComponent
@@ -175,6 +176,11 @@ func infoItems(data: PeerInfoScreenData?, context: AccountContext, presentationD
                     }
                 )
             )
+        }
+        if MolteagramInterceptor.shared.current.showUserId {
+            items[currentPeerInfoSection]!.append(PeerInfoScreenActionItem(id: 501, text: "ID: \(user.id.toInt64())", action: {
+                interaction.copyId("\(user.id.toInt64())")
+            }))
         }
         
         if let cachedData = data.cachedData as? CachedUserData {
@@ -540,6 +546,17 @@ func infoItems(data: PeerInfoScreenData?, context: AccountContext, presentationD
         let ItemEdit = 10
         let ItemPeerPersonalChannel = 11
         
+        var isGigagroup = true
+        if case .broadcast = channel.info {
+            isGigagroup = false
+        }
+        
+        if (MolteagramInterceptor.shared.current.showChannelsId && !isGigagroup) || (isGigagroup && MolteagramInterceptor.shared.current.showGroupsId) {
+            items[.peerMembers]!.append(PeerInfoScreenActionItem(id: 501, text: "ID: -100\(channel.id.id._internalGetInt64Value())", action: {
+                interaction.copyId("-100\(channel.id.id._internalGetInt64Value())")
+            }))
+        }
+        
         if let _ = data.threadData {
             let mainUsername: String
             if let addressName = channel.addressName {
@@ -794,6 +811,11 @@ func infoItems(data: PeerInfoScreenData?, context: AccountContext, presentationD
             }
         }
     } else if let group = data.peer as? TelegramGroup {
+        if MolteagramInterceptor.shared.current.showGroupsId {
+            items[.peerMembers]!.append(PeerInfoScreenActionItem(id: 501, text: "ID: -\(group.id.id._internalGetInt64Value())", action: {
+                interaction.copyId("-\(group.id.id._internalGetInt64Value())")
+            }))
+        }
         if let cachedData = data.cachedData as? CachedGroupData {
             let aboutText: String?
             if group.isFake {

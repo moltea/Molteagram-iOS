@@ -3,7 +3,7 @@ import Postbox
 import SwiftSignalKit
 import TelegramApi
 import MtProtoKit
-
+import MolteagramCore
 
 public enum CallListViewType {
     case all
@@ -959,6 +959,9 @@ public final class AccountViewTracker {
                         let signal = (account.postbox.transaction { transaction -> Signal<Void, NoError> in
                             if let peer = transaction.getPeer(peerId), let inputPeer = apiInputPeer(peer) {
                                 let request: Signal<Bool, MTRpcError>
+                                if !MolteagramInterceptor.shared.currentStatuses.doNotReadMessages {
+                                    return .complete()
+                                }
                                 switch inputPeer {
                                 case .inputPeerChat, .inputPeerSelf, .inputPeerUser:
                                     request = account.network.request(Api.functions.messages.readMessageContents(id: messageIds.map { $0.id }))
@@ -970,6 +973,7 @@ public final class AccountViewTracker {
                                 default:
                                     return .complete()
                                 }
+                            
                                 
                                 return request
                                 |> `catch` { _ -> Signal<Bool, NoError> in

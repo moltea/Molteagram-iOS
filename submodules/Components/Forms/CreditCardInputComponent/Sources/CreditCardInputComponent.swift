@@ -141,7 +141,7 @@ public final class CreditCardInputComponent: Component {
                 self.textField.autoFormattingBehavior = .expiration
             }
             
-            self.textField.font = UIFont.systemFont(ofSize: 17.0)
+            self.textField.font = Font.regular(17.0)
             self.textField.defaultColor = component.textColor
             self.textField.errorColor = .red
             self.textField.placeholderColor = component.placeholderColor

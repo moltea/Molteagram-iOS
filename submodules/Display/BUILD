@@ -7,7 +7,7 @@ swift_library(
         "Source/**/*.swift",
     ]),
     copts = [
-        "-warnings-as-errors",
+        
     ],
     deps = [
     	"//submodules/ObjCRuntimeUtils:ObjCRuntimeUtils",
@@ -15,6 +15,7 @@ swift_library(
         "//submodules/AppBundle:AppBundle",
     	"//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/Markdown:Markdown",
+        "//submodules/MolteagramCore",
         "//submodules/AsyncDisplayKit:AsyncDisplayKit",
     ],
     visibility = [

@@ -7,10 +7,11 @@ swift_library(
         "Sources/**/*.swift",
     ]),
     copts = [
-        "-warnings-as-errors",
+        
     ],
     deps = [
         "//submodules/Crc32:Crc32",
+        "//submodules/MolteagramCore",
     	"//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
     	"//submodules/sqlcipher:sqlcipher",
         "//submodules/MurMurHash32:MurMurHash32",

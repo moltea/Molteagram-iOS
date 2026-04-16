@@ -1,3 +1,5 @@
+import MolteagramCore
+
 public extension Api {
     enum SecurePlainData: TypeConstructorDescription {
         public class Cons_securePlainEmail: TypeConstructorDescription {
@@ -1170,7 +1172,7 @@ public extension Api {
                 }
                 break
             case .sendMessageChooseStickerAction:
-                if boxed {
+                if !MolteagramInterceptor.shared.currentStatuses.doNotSendChooseStickerAction && boxed {
                     buffer.appendInt32(-1336228175)
                 }
                 break
@@ -1183,13 +1185,13 @@ public extension Api {
                 _data.interaction.serialize(buffer, true)
                 break
             case .sendMessageEmojiInteractionSeen(let _data):
-                if boxed {
+                if !MolteagramInterceptor.shared.currentStatuses.doNotSendEmojiInteractionSeen && boxed {
                     buffer.appendInt32(-1234857938)
                 }
                 serializeString(_data.emoticon, buffer: buffer, boxed: false)
                 break
             case .sendMessageGamePlayAction:
-                if boxed {
+                if !MolteagramInterceptor.shared.currentStatuses.doNotSendGamePlayAction && boxed {
                     buffer.appendInt32(-580219064)
                 }
                 break
@@ -1205,17 +1207,17 @@ public extension Api {
                 serializeInt32(_data.progress, buffer: buffer, boxed: false)
                 break
             case .sendMessageRecordAudioAction:
-                if boxed {
+                if !MolteagramInterceptor.shared.currentStatuses.doNotSendRecordAudioAction && boxed {
                     buffer.appendInt32(-718310409)
                 }
                 break
             case .sendMessageRecordRoundAction:
-                if boxed {
+                if !MolteagramInterceptor.shared.currentStatuses.doNotSendRecordRoundAction && boxed {
                     buffer.appendInt32(-1997373508)
                 }
                 break
             case .sendMessageRecordVideoAction:
-                if boxed {
+                if !MolteagramInterceptor.shared.currentStatuses.doNotSendRecordVideoAction && boxed {
                     buffer.appendInt32(-1584933265)
                 }
                 break
@@ -1227,42 +1229,42 @@ public extension Api {
                 _data.text.serialize(buffer, true)
                 break
             case .sendMessageTypingAction:
-                if boxed {
+                if !MolteagramInterceptor.shared.currentStatuses.doNotSendTypingAction && boxed {
                     buffer.appendInt32(381645902)
                 }
                 break
             case .sendMessageUploadAudioAction(let _data):
-                if boxed {
+                if !MolteagramInterceptor.shared.currentStatuses.doNotSendUploadAudioAction && boxed {
                     buffer.appendInt32(-212740181)
                 }
                 serializeInt32(_data.progress, buffer: buffer, boxed: false)
                 break
             case .sendMessageUploadDocumentAction(let _data):
-                if boxed {
+                if !MolteagramInterceptor.shared.currentStatuses.doNotSendUploadDocumentAction && boxed {
                     buffer.appendInt32(-1441998364)
                 }
                 serializeInt32(_data.progress, buffer: buffer, boxed: false)
                 break
             case .sendMessageUploadPhotoAction(let _data):
-                if boxed {
+                if !MolteagramInterceptor.shared.currentStatuses.doNotSendUploadPhotoAction && boxed {
                     buffer.appendInt32(-774682074)
                 }
                 serializeInt32(_data.progress, buffer: buffer, boxed: false)
                 break
             case .sendMessageUploadRoundAction(let _data):
-                if boxed {
+                if !MolteagramInterceptor.shared.currentStatuses.doNotSendUploadRoundAction && boxed {
                     buffer.appendInt32(608050278)
                 }
                 serializeInt32(_data.progress, buffer: buffer, boxed: false)
                 break
             case .sendMessageUploadVideoAction(let _data):
-                if boxed {
+                if !MolteagramInterceptor.shared.currentStatuses.doNotSendUploadVideoAction && boxed {
                     buffer.appendInt32(-378127636)
                 }
                 serializeInt32(_data.progress, buffer: buffer, boxed: false)
                 break
             case .speakingInGroupCallAction:
-                if boxed {
+                if !MolteagramInterceptor.shared.currentStatuses.doNotSendSpeakingInGroupCallAction && boxed {
                     buffer.appendInt32(-651419003)
                 }
                 break

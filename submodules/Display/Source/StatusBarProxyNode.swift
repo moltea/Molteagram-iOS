@@ -135,7 +135,7 @@ private class StatusBarItemNode: ASDisplayNode {
                     
                     formatter?.locale = Locale.current
                     if let string = formatter?.string(from: Date()) {
-                        let attributedString = NSAttributedString(string: string, attributes: [NSAttributedString.Key.font: UIFont.boldSystemFont(ofSize: 12.0), NSAttributedString.Key.foregroundColor: color])
+                        let attributedString = NSAttributedString(string: string, attributes: [NSAttributedString.Key.font: Font.bold(12.0), NSAttributedString.Key.foregroundColor: color])
                         
                         let line = CTLineCreateWithAttributedString(attributedString)
 

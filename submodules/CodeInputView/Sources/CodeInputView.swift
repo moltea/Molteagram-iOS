@@ -1,7 +1,7 @@
 import Foundation
 import UIKit
-import AsyncDisplayKit
 import Display
+import AsyncDisplayKit
 import SwiftSignalKit
 import PhoneNumberFormat
 
@@ -100,7 +100,7 @@ public final class CodeInputView: ASDisplayNode, UITextFieldDelegate {
             }
             
             if #available(iOS 13.0, *) {
-                self.textNode.attributedText = NSAttributedString(string: text, font: UIFont.monospacedSystemFont(ofSize: fontSize, weight: .regular), textColor: UIColor(argb: textColor))
+                self.textNode.attributedText = NSAttributedString(string: text, font: Font.monospace(fontSize), textColor: UIColor(argb: textColor))
             } else {
                 self.textNode.attributedText = NSAttributedString(string: text, font: Font.monospace(fontSize), textColor: UIColor(argb: textColor))
             }
@@ -331,7 +331,7 @@ public final class CodeInputView: ASDisplayNode, UITextFieldDelegate {
         }
         
         if #available(iOS 13.0, *) {
-            self.prefixLabel.attributedText = NSAttributedString(string: prefix, font: UIFont.monospacedSystemFont(ofSize: 21.0, weight: .regular), textColor: UIColor(argb: theme.foreground))
+            self.prefixLabel.attributedText = NSAttributedString(string: prefix, font: Font.monospace(21.0), textColor: UIColor(argb: theme.foreground))
         } else {
             self.prefixLabel.attributedText = NSAttributedString(string: prefix, font: Font.monospace(21.0), textColor: UIColor(argb: theme.foreground))
         }

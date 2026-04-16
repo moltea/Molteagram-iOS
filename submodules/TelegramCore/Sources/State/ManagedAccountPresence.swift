@@ -1,5 +1,6 @@
 import Foundation
 import TelegramApi
+import MolteagramCore
 import Postbox
 import SwiftSignalKit
 import MtProtoKit
@@ -53,7 +54,11 @@ private final class AccountPresenceManagerImpl {
             }, queue: self.queue)
             self.onlineTimer = timer
             timer.start()
-            request = self.network.request(Api.functions.account.updateStatus(offline: .boolFalse))
+            if !MolteagramInterceptor.shared.currentStatuses.doNotSendOnline {
+                request = self.network.request(Api.functions.account.updateStatus(offline: .boolFalse))
+            } else {
+                request = .single(.boolTrue)
+            }
         } else {
             self.onlineTimer?.invalidate()
             self.onlineTimer = nil

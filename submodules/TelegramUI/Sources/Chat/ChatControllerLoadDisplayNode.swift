@@ -1098,7 +1098,7 @@ extension ChatControllerImpl {
                 })
             } else if case let .customChatContents(customChatContents) = strongSelf.subject {
                 switch customChatContents.kind {
-                case .hashTagSearch:
+                case .hashTagSearch, .deletedMessages, .editedMessages(_):
                     break
                 case .quickReplyMessageInput:
                     customChatContents.enqueueMessages(messages: messages)

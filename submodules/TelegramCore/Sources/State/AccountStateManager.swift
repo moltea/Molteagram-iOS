@@ -3,6 +3,7 @@ import Postbox
 import SwiftSignalKit
 import TelegramApi
 import MtProtoKit
+import MolteagramCore
 
 private enum AccountStateManagerOperationContent {
     case pollDifference(Int32, AccountFinalStateEvents)
@@ -407,6 +408,15 @@ public final class AccountStateManager {
             self.updateConfigRequested = updateConfigRequested
             self.isPremiumUpdated = isPremiumUpdated
             self.messagesRemovedContext = messagesRemovedContext
+            
+            MolteagramInterceptor.shared.performOfflinePing = { [weak network] in
+                guard let network = network else { return }
+                
+                let _ = (network.request(Api.functions.account.updateStatus(offline: .boolTrue))
+                |> `catch` { _ -> Signal<Api.Bool, NoError> in
+                    return .single(.boolFalse)
+                }).start()
+            }
         }
         
         deinit {

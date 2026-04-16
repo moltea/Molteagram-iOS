@@ -127,8 +127,24 @@ API_AVAILABLE(ios(10))
 - (instancetype _Nonnull)initWithBaseAppBundleId:(NSString * _Nonnull)baseAppBundleId {
     self = [super init];
     if (self != nil) {
-        _apiId = APP_CONFIG_API_ID;
-        _apiHash = @(APP_CONFIG_API_HASH);
+        NSString *appGroupId = [NSString stringWithFormat:@"group.%@", baseAppBundleId];
+        NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:appGroupId];
+        
+        int32_t customApiId = (int32_t)[defaults integerForKey:@"Molteagram_CustomApiId"];
+        NSString *customApiHash = [defaults stringForKey:@"Molteagram_CustomApiHash"];
+        
+        if (customApiId != 0) {
+            _apiId = customApiId;
+        } else {
+            _apiId = APP_CONFIG_API_ID;
+        }
+        
+        if (customApiHash != nil && customApiHash.length > 0) {
+            _apiHash = customApiHash;
+        } else {
+            _apiHash = @(APP_CONFIG_API_HASH);
+        }
+        
         _appCenterId = @(APP_CONFIG_APP_CENTER_ID);
         
         _dataDict = [[NSMutableDictionary alloc] init];

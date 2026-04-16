@@ -187,7 +187,7 @@ private final class PaymentCardEntryScreenContentComponent: CombinedComponent {
             
             let text = text.update(
                 component: MultilineTextComponent(
-                    text: .plain(NSAttributedString(string: "Enter your card information or take a photo.", font: UIFont.systemFont(ofSize: 13.0), textColor: environment.theme.list.freeTextColor, paragraphAlignment: .center))
+                    text: .plain(NSAttributedString(string: "Enter your card information or take a photo.", font: Font.regular(13.0), textColor: environment.theme.list.freeTextColor, paragraphAlignment: .center))
                 ),
                 environment: {},
                 availableSize: CGSize(width: context.availableSize.width - sideInset * 2.0, height: 100.0),
@@ -293,8 +293,8 @@ private final class PaymentCardEntryScreenContentComponent: CombinedComponent {
             size.height += inputSection.size.height
             size.height += 8.0
             
-            let body = MarkdownAttributeSet(font: UIFont.systemFont(ofSize: 13.0), textColor: environment.theme.list.freeTextColor)
-            let link = MarkdownAttributeSet(font: UIFont.systemFont(ofSize: 13.0), textColor: environment.theme.list.itemAccentColor, additionalAttributes: ["URL": true as NSNumber])
+            let body = MarkdownAttributeSet(font: Font.regular(13.0), textColor: environment.theme.list.freeTextColor)
+            let link = MarkdownAttributeSet(font: Font.regular(13.0), textColor: environment.theme.list.itemAccentColor, additionalAttributes: ["URL": true as NSNumber])
             let attributes = MarkdownAttributes(body: body, bold: body, link: link, linkAttribute: { _ in
                 return nil
             })

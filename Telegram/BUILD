@@ -117,6 +117,19 @@ config_setting(
     },
 )
 
+bool_flag(
+    name = "enableNotificationsOnly",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "enableNotificationsOnlySetting",
+    flag_values = {
+        ":enableNotificationsOnly": "True",
+    },
+)
+
 genrule(
     name = "empty",
     outs = ["empty.swift"],
@@ -143,7 +156,7 @@ genrule(
     ],
 )
 
-minimum_os_version = "13.0"
+minimum_os_version = "17.0"
 
 notificationServiceExtensionVersion = "v1"
 
@@ -254,7 +267,9 @@ filegroup(
         "Telegram-iOS/en.lproj/Localizable.strings",
     ] + [
         "{}.lproj/Localizable.strings".format(language) for language in empty_languages
-    ],
+    ] + glob([
+            "Telegram-iOS/*.lproj/MolteagramLocalizable.strings"
+    ]),
 )
 
 filegroup(
@@ -312,6 +327,7 @@ alternate_icon_folders = [
     "Premium",
     "PremiumBlack",
     "PremiumTurbo",
+    "DefaultMolteagramIcon",
 ]
 
 composer_icon_folders = ["Telegram"]
@@ -516,25 +532,60 @@ siri_fragment = "" if not telegram_enable_siri else """
 aps_fragment = "" if telegram_aps_environment == "" else """
 <key>aps-environment</key>
 <string>{telegram_aps_environment}</string>
+
 """.format(telegram_aps_environment=telegram_aps_environment)
 
-app_groups_fragment = """
-    <key>com.apple.security.application-groups</key>
-    <array>
-        <string>group.{telegram_bundle_id}</string>
-    </array>
-    <key>application-identifier</key>
-    <string>{telegram_team_id}.{telegram_bundle_id}</string>
+beta_reports_active_fragment = "" if telegram_aps_environment != "production" else """
+<key>beta-reports-active</key>
+<true/>
+"""
+
+shared_app_groups_fragment = """<key>com.apple.security.application-groups</key>
+<array>
+    <string>group.{telegram_bundle_id}</string>
+</array>
+""".format(telegram_bundle_id=telegram_bundle_id)
+
+app_groups_fragment = shared_app_groups_fragment + """<key>application-identifier</key>
+<string>{telegram_team_id}.{telegram_bundle_id}</string>
 """.format(
     telegram_team_id=telegram_team_id,
     telegram_bundle_id=telegram_bundle_id
 )
 
+notification_service_identifier_fragment = """<key>application-identifier</key>
+<string>{telegram_team_id}.{telegram_bundle_id}.NotificationService</string>
+""".format(
+    telegram_team_id=telegram_team_id,
+    telegram_bundle_id=telegram_bundle_id
+)
+
+intents_identifier_fragment = """<key>application-identifier</key>
+<string>{telegram_team_id}.{telegram_bundle_id}.SiriIntents</string>
+""".format(
+    telegram_team_id=telegram_team_id,
+    telegram_bundle_id=telegram_bundle_id
+)
+
+notification_content_identifier_fragment = """<key>application-identifier</key>
+<string>{telegram_team_id}.{telegram_bundle_id}.NotificationContent</string>
+""".format(
+    telegram_team_id=telegram_team_id,
+    telegram_bundle_id=telegram_bundle_id
+)
+
+keychain_access_groups_fragment = """<key>keychain-access-groups</key>
+<array>
+    <string>{telegram_team_id}.*</string>
+    <string>com.apple.token</string>
+</array>
+""".format(telegram_team_id=telegram_team_id)
+
 official_communication_notifications_fragment = """
 <key>com.apple.developer.usernotifications.communication</key>
 <true/>
 """
-communication_notifications_fragment = official_communication_notifications_fragment if telegram_bundle_id in official_bundle_ids else ""
+communication_notifications_fragment = official_communication_notifications_fragment
 
 official_notification_filtering_fragment = """
 <key>com.apple.developer.usernotifications.filtering</key>
@@ -572,8 +623,79 @@ plist_fragment(
         notification_filtering_fragment,
         signin_fragment,
         background_gpu_fragment,
+        keychain_access_groups_fragment,
+        beta_reports_active_fragment,
     ])
 )
+
+plist_fragment(
+    name = "NotificationServiceEntitlements",
+    extension = "entitlements",
+    template = "".join([
+        notification_service_identifier_fragment,
+        aps_fragment,
+        shared_app_groups_fragment,
+        communication_notifications_fragment,
+        keychain_access_groups_fragment,
+        beta_reports_active_fragment,
+    ])
+)
+
+plist_fragment(
+    name = "IntentsEntitlements",
+    extension = "entitlements",
+    template = "".join([
+        intents_identifier_fragment,
+        shared_app_groups_fragment,
+        communication_notifications_fragment,
+        siri_fragment,
+        keychain_access_groups_fragment,
+        beta_reports_active_fragment,
+    ])
+)
+
+plist_fragment(
+    name = "NotificationContentEntitlements",
+    extension = "entitlements",
+    template = "".join([
+        notification_content_identifier_fragment,
+        shared_app_groups_fragment,
+        communication_notifications_fragment,
+        keychain_access_groups_fragment,
+        beta_reports_active_fragment,
+    ])
+)
+
+plist_fragment(
+    name = "ShareEntitlements",
+    extension = "entitlements",
+    template = "".join([
+        shared_app_groups_fragment,
+        keychain_access_groups_fragment,
+        beta_reports_active_fragment,
+    ])
+)
+
+plist_fragment(
+    name = "WidgetEntitlements",
+    extension = "entitlements",
+    template = "".join([
+        shared_app_groups_fragment,
+        keychain_access_groups_fragment,
+        beta_reports_active_fragment,
+    ])
+)
+
+plist_fragment(
+    name = "BroadcastEntitlements",
+    extension = "entitlements",
+    template = "".join([
+        shared_app_groups_fragment,
+        keychain_access_groups_fragment,
+        beta_reports_active_fragment,
+    ])
+)
+
 
 genrule(
     name = "VersionInfoPlist",
@@ -612,7 +734,7 @@ plist_fragment(
     template =
     """
     <key>CFBundleDisplayName</key>
-    <string>Telegram</string>
+    <string>Molteagram</string>
     """
 )
 
@@ -992,7 +1114,7 @@ swift_library(
         "Share/**/*.swift",
     ]),
     copts = [
-        "-warnings-as-errors",
+        
     ],
     deps = [
         "//submodules/TelegramUI",
@@ -1017,10 +1139,8 @@ ios_extension(
         ":AppNameInfoPlist",
     ],
     minimum_os_version = minimum_os_version,
-    provisioning_profile = select({
-        ":disableProvisioningProfilesSetting": None,
-        "//conditions:default": "@build_configuration//provisioning:Share.mobileprovision",
-    }),
+    provisioning_profile = "@build_configuration//provisioning:Share.mobileprovision",
+    entitlements = ":ShareEntitlements.entitlements",
     deps = [":ShareExtensionLib"],
     frameworks = [
         ":TelegramUIFramework"
@@ -1079,7 +1199,7 @@ swift_library(
         "NotificationContent/**/*.swift",
     ]),
     copts = [
-        "-warnings-as-errors",
+        
     ],
     deps = [
         "//submodules/TelegramUI:TelegramUI",
@@ -1124,10 +1244,8 @@ ios_extension(
     ],
     minimum_os_version = minimum_os_version, # maintain the same minimum OS version across extensions
     #ipa_post_processor = ":SetMinOsVersionNotificationContentExtension",
-    provisioning_profile = select({
-        ":disableProvisioningProfilesSetting": None,
-        "//conditions:default": "@build_configuration//provisioning:NotificationContent.mobileprovision",
-    }),
+    provisioning_profile = "@build_configuration//provisioning:NotificationContent.mobileprovision",
+    entitlements = ":NotificationContentEntitlements.entitlements",
     deps = [":NotificationContentExtensionLib"],
     frameworks = [
         ":TelegramUIFramework"
@@ -1174,7 +1292,7 @@ swift_library(
         "WidgetKitWidget/**/*.swift",
     ]),
     copts = [
-        "-warnings-as-errors",
+        
     ],
     data = [
         ":WidgetAssets",
@@ -1230,10 +1348,8 @@ ios_extension(
     minimum_os_version = minimum_os_version, # maintain the same minimum OS version across extensions
     ipa_post_processor = ":SetMinOsVersionWidgetExtension",
     #provides_main = True,
-    provisioning_profile = select({
-        ":disableProvisioningProfilesSetting": None,
-        "//conditions:default": "@build_configuration//provisioning:Widget.mobileprovision",
-    }),
+    provisioning_profile = "@build_configuration//provisioning:Widget.mobileprovision",
+    entitlements = ":WidgetEntitlements.entitlements",
     deps = [
         ":WidgetExtensionLib",
     ],
@@ -1309,7 +1425,7 @@ swift_library(
         "SiriIntents/**/*.swift",
     ]),
     copts = [
-        "-warnings-as-errors",
+        
     ],
     data = glob([
         "SiriIntents/*.lproj/Intents.intentdefinition"
@@ -1333,7 +1449,7 @@ swift_library(
     name = "SetMinOsVersionIntentsExtension",
     cmd_bash =
 """
-    name=IntentsExtension.appex
+    name=SiriIntents.appex
     cat $(location PatchMinOSVersion.source.sh) | sed -e "s/<<<MIN_OS_VERSION>>>/10\\.0/g" | sed -e "s/<<<NAME>>>/$$name/g" > $(location SetMinOsVersionIntentsExtension.sh)
 """,
     srcs = [
@@ -1349,7 +1465,7 @@ swift_library(
 )'''
 
 ios_extension(
-    name = "IntentsExtension",
+    name = "SiriIntents",
     bundle_id = "{telegram_bundle_id}.SiriIntents".format(
         telegram_bundle_id = telegram_bundle_id,
     ),
@@ -1366,10 +1482,8 @@ ios_extension(
     ],
     minimum_os_version = minimum_os_version, # maintain the same minimum OS version across extensions
     #ipa_post_processor = ":SetMinOsVersionIntentsExtension",
-    provisioning_profile = select({
-        ":disableProvisioningProfilesSetting": None,
-        "//conditions:default": "@build_configuration//provisioning:Intents.mobileprovision",
-    }),
+    provisioning_profile = "@build_configuration//provisioning:Intents.mobileprovision",
+    entitlements = ":IntentsEntitlements.entitlements",
     deps = [":IntentsExtensionLib"],
     frameworks = [
         ":SwiftSignalKitFramework",
@@ -1412,7 +1526,7 @@ swift_library(
         "BroadcastUpload/**/*.swift",
     ]),
     copts = [
-        "-warnings-as-errors",
+        
     ],
     deps = [
         "//submodules/TelegramUI:TelegramUI",
@@ -1461,10 +1575,8 @@ ios_extension(
     ],
     minimum_os_version = minimum_os_version, # maintain the same minimum OS version across extensions
     #ipa_post_processor = ":SetMinOsVersionBroadcastUploadExtension",
-    provisioning_profile = select({
-        ":disableProvisioningProfilesSetting": None,
-        "//conditions:default": "@build_configuration//provisioning:BroadcastUpload.mobileprovision",
-    }),
+    provisioning_profile = "@build_configuration//provisioning:BroadcastUpload.mobileprovision",
+    entitlements = ":BroadcastEntitlements.entitlements",
     deps = [":BroadcastUploadExtensionLib"],
     frameworks = [
         ":TelegramUIFramework",
@@ -1521,10 +1633,8 @@ ios_extension(
         ":AppNameInfoPlist",
     ],
     minimum_os_version = minimum_os_version, # maintain the same minimum OS version across extensions
-    provisioning_profile = select({
-        ":disableProvisioningProfilesSetting": None,
-        "//conditions:default": "@build_configuration//provisioning:NotificationService.mobileprovision",
-    }),
+    provisioning_profile = "@build_configuration//provisioning:NotificationService.mobileprovision",
+    entitlements = ":NotificationServiceEntitlements.entitlements",
     deps = ["//Telegram/NotificationService:NotificationServiceExtensionLib"],
     frameworks = [
         ":MtProtoKitFramework",
@@ -1551,11 +1661,11 @@ plist_fragment(
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleDisplayName</key>
-    <string>Telegram</string>
+    <string>Molteagram</string>
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}</string>
     <key>CFBundleName</key>
-    <string>Telegram</string>
+    <string>Molteagram</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleSignature</key>
@@ -1732,10 +1842,7 @@ ios_application(
     ),
     families = ["iphone", "ipad"],
     minimum_os_version = minimum_os_version,
-    provisioning_profile = select({
-        ":disableProvisioningProfilesSetting": None,
-        "//conditions:default": ":Telegram_xcode_profile" if telegram_use_xcode_managed_codesigning else "@build_configuration//provisioning:Telegram.mobileprovision",
-    }),
+    provisioning_profile = ":Telegram_xcode_profile" if telegram_use_xcode_managed_codesigning else "@build_configuration//provisioning:Telegram.mobileprovision",
     entitlements = ":TelegramEntitlements.entitlements",
     infoplists = [
         ":TelegramInfoPlist",
@@ -1764,13 +1871,14 @@ ios_application(
     ],
     extensions = select({
         ":disableExtensionsSetting": [],
-        "//conditions:default": [
-            ":ShareExtension",
-            ":NotificationContentExtension",
+        ":enableNotificationsOnlySetting": [
             ":NotificationServiceExtension" + notificationServiceExtensionVersion,
-            ":IntentsExtension",
-            ":WidgetExtension",
-            ":BroadcastUploadExtension",
+            ":NotificationContentExtension",
+        ],
+        "//conditions:default": [
+            ":NotificationServiceExtension" + notificationServiceExtensionVersion,
+            ":SiriIntents",
+            ":NotificationContentExtension",
         ],
     }),
     deps = [

@@ -78,7 +78,7 @@ public final class AnimatedCountView: UIView {
         self.countLabel.fontSize = fontSize
         self.countLabel.attributedText = NSAttributedString(string: text, font: Font.with(size: fontSize, design: .round, weight: .semibold, traits: [.monospacedNumbers]), textColor: .white)
         
-        self.subtitleLabel.attributedText = NSAttributedString(string: subtitle, attributes: [.font: UIFont.systemFont(ofSize: max(floor((fontSize + 4.0) / 3.0), 12.0), weight: .semibold)])
+        self.subtitleLabel.attributedText = NSAttributedString(string: subtitle, attributes: [.font: Font.semibold(max(floor((fontSize + 4.0) / 3.0), 12.0))])
         self.subtitleLabel.isHidden = subtitle.isEmpty
     }
     

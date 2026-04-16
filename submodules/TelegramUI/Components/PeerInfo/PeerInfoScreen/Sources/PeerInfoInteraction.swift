@@ -73,6 +73,7 @@ final class PeerInfoInteraction {
     let openPremiumGift: () -> Void
     let editingOpenPersonalChannel: () -> Void
     let openUsernameContextMenu: (ASDisplayNode, ContextGesture?) -> Void
+    let copyId: (String) -> Void
     let openBioContextMenu: (ASDisplayNode, ContextGesture?) -> Void
     let openNoteContextMenu: (ASDisplayNode, ContextGesture?) -> Void
     let openWorkingHoursContextMenu: (ASDisplayNode, ContextGesture?) -> Void
@@ -150,6 +151,7 @@ final class PeerInfoInteraction {
         openPremiumGift: @escaping () -> Void,
         editingOpenPersonalChannel: @escaping () -> Void,
         openUsernameContextMenu: @escaping (ASDisplayNode, ContextGesture?) -> Void,
+        copyId: @escaping (String) -> Void,
         openBioContextMenu: @escaping (ASDisplayNode, ContextGesture?) -> Void,
         openNoteContextMenu: @escaping (ASDisplayNode, ContextGesture?) -> Void,
         openWorkingHoursContextMenu: @escaping (ASDisplayNode, ContextGesture?) -> Void,
@@ -226,6 +228,7 @@ final class PeerInfoInteraction {
         self.openPremiumGift = openPremiumGift
         self.editingOpenPersonalChannel = editingOpenPersonalChannel
         self.openUsernameContextMenu = openUsernameContextMenu
+        self.copyId = copyId
         self.openBioContextMenu = openBioContextMenu
         self.openNoteContextMenu = openNoteContextMenu
         self.openWorkingHoursContextMenu = openWorkingHoursContextMenu

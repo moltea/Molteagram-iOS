@@ -1,0 +1,81 @@
+"Molteagram.DisabledCopySuffix" = "Хах? Не для меня! 😈";
+"Molteagram.SettingsTitle" = "Настройки Molteagram";
+"Molteagram.StatusesTab" = "Статусы";
+"Appearance.AppIconDefaultMolteagramIcon" = "Molteagram";
+
+"Molteagram.MessagesHeader" = "СООБЩЕНИЯ";
+"Molteagram.SaveDeletedMessages" = "Сохранять удаленки";
+
+"Molteagram.DisappearingMediaHeader" = "САМОУНИЧТОЖАЮЩИЕСЯ МЕДИАФАЙЛЫ";
+"Molteagram.SaveDisappearingMedia" = "Сохранять одноразки";
+"Molteagram.MarkingAsConsumed" = "Помечать как открытые";
+"Molteagram.AllowSecretScreenshots" = "Разрешить скриншоты";
+"Molteagram.AllowSecretDownload" = "Разрешить сохранение";
+
+"Molteagram.UiImprovementsHeader" = "УЛУЧШЕНИЯ UI";
+"Molteagram.ShowUserId" = "Показывать ID юзеров";
+"Molteagram.ShowGroupsId" = "Показывать ID групп";
+"Molteagram.ShowChannelsId" = "Показывать ID каналов";
+"Molteagram.DisableAds" = "Отключить рекламу";
+"Molteagram.HideSimilarChannels" = "Скрыть похожие каналы";
+"Molteagram.ShowSecondsInMessages" = "Секунды в сообщениях";
+
+"Molteagram.MiscHeader" = "РАЗНОЕ";
+"Molteagram.ForceAllowCopy" = "Форс копирование";
+
+"Molteagram.StatusesTitle" = "Настройки Статусов";
+
+"Molteagram.BasicStatusesHeader" = "БАЗОВЫЕ СТАТУСЫ";
+"Molteagram.DontViewStories" = "Не смотреть истории";
+"Molteagram.DontReadMessages" = "Не читать сообщения";
+"Molteagram.ForceOffline" = "Форс-офлайн";
+"Molteagram.DontSendTyping" = "Не отправлять печатает";
+
+"Molteagram.RecordsHeader" = "ЗАПИСЫВАЕТ";
+"Molteagram.DisableRecordingAudio" = "Откл. записывает голосовое";
+"Molteagram.DisableRecordingRound" = "Откл. записывает кружок";
+"Molteagram.DisableRecordingVideo" = "Откл. записывает видео";
+
+"Molteagram.UploadsHeader" = "ОТПРАВЛЯЕТ";
+"Molteagram.DisableUploadingAudio" = "Откл. отправляет голосовое";
+"Molteagram.DisableUploadingDocument" = "Откл. отправляет файл";
+"Molteagram.DisableUploadingPhoto" = "Откл. отправляет фото";
+"Molteagram.DisableUploadingRound" = "Откл. отправляет кружок";
+"Molteagram.DisableUploadingVideo" = "Откл. отправляет видео";
+
+"Molteagram.MiscHeader" = "РАЗНОЕ";
+"Molteagram.DisableChoosingSticker" = "Откл. выбирает стикер";
+"Molteagram.DisableWatchingAtEmoji" = "Откл. смотрит на";
+"Molteagram.DisablePlayingGame" = "Откл. играет в игру";
+"Molteagram.DisableSpeaking" = "Откл. говорит";
+"Molteagram.SaveEditedMessages" = "История изменений";
+"Molteagram.DeletedMessages" = "Удалёнки";
+"Molteagram.EditHistory" = "История изменений";
+"Molteagram.DeletedMessagesWillAppearHere" = "Удаленные сообщения будут появляться здесь";
+"Molteagram.EditedMessagesWillAppearHere" = "История изменений будет появляться здесь";
+
+"Molteagram.Fonts" = "Шрифты";
+"Molteagram.FontsTitle" = "Настройки шрифтов";
+"Molteagram.FontSystem" = "Системный шрифт";
+"Molteagram.FontMonospace" = "Моноширинный шрифт";
+"Molteagram.FontSerif" = "Шрифт с засечками";
+"Molteagram.FontRound" = "Скруглённый шрифт";
+"Molteagram.FontDefault" = "По умолчанию";
+"Molteagram.FontResetAll" = "Сбросить все шрифты";
+"Molteagram.FontResetConfirmTitle" = "Сбросить шрифты";
+"Molteagram.FontResetAllConfirmation" = "Все пользовательские шрифты будут удалены и восстановлены по умолчанию.";
+"Molteagram.FontWeightsHeader" = "НАЧЕРТАНИЯ";
+"Molteagram.FontImport" = "Импорт .ttf / .otf";
+"Molteagram.Cancel" = "Отмена";
+"Molteagram.FontRestartNotice" = "Для полного применения изменений шрифтов необходимо перезапустить приложение.";
+"Molteagram.FontSystemInfo" = "Используется для большинства элементов интерфейса: сообщения, меню, кнопки, заголовки навигации и метки по всему приложению.";
+"Molteagram.FontMonospaceInfo" = "Используется для блоков кода, отформатированного текста и моноширинного текста в сообщениях.";
+"Molteagram.FontSerifInfo" = "Используется для текста с засечками в сообщениях и на страницах Instant View.";
+"Molteagram.FontRoundInfo" = "Используется для скруглённых элементов интерфейса, таких как счётчики стикеров, бейджи и компактные метки.";
+"Molteagram.FontImportPack" = "Импортировать пакет шрифтов";
+"Molteagram.FontImportPackDialog" = "Импорт пакета";
+"Molteagram.FontImportPackSuccess" = "Импортировано шрифтов: %1$d. Пропущено: %2$d.";
+"Molteagram.ApiHeader" = "НАСТРОЙКИ API";
+"Molteagram.ApiId" = "API ID";
+"Molteagram.ApiHash" = "API Hash";
+"Molteagram.ApiFooter" = "Изменение учетных данных API требует полного перезапуска приложения для вступления в силу.";

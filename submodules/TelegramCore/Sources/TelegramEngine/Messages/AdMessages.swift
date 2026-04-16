@@ -2,6 +2,7 @@ import Foundation
 import Postbox
 import SwiftSignalKit
 import TelegramApi
+import MolteagramCore
 
 private class AdMessagesHistoryContextImpl {
     final class CachedMessage: Equatable, Codable {
@@ -450,10 +451,27 @@ private class AdMessagesHistoryContextImpl {
         self.messageId = messageId
 
         self.stateValue = State(interPostInterval: nil, messages: [])
+        
+        self.disposable.set((MolteagramInterceptor.shared.typeErasedSettingsSignal
+        |> deliverOn(queue)).start(next: { [weak self] settings in
+            guard let self else { return }
+            if (settings as? MolteagramSettingsStruct)?.disableAds == true {
+                self.queue.async {
+                    if let stateValue = self.stateValue, !stateValue.messages.isEmpty {
+                        var state = stateValue
+                        state.messages = []
+                        self.stateValue = state
+                    }
+                }
+            }
+        }))
 
         if messageId == nil {
             self.state.set(CachedState.getCached(postbox: account.postbox, peerId: peerId)
-            |> mapToSignal { cachedState -> Signal<State, NoError> in
+            |> mapToSignal { [weak self] cachedState -> Signal<State, NoError> in
+                if (MolteagramInterceptor.shared.current as? MolteagramSettingsStruct)?.disableAds == true {
+                    return .single(State(interPostInterval: nil, messages: []))
+                }
                 if let cachedState = cachedState, cachedState.timestamp >= Int32(Date().timeIntervalSince1970) - 5 * 60 {
                     return account.postbox.transaction { transaction -> State in
                         return State(interPostInterval: cachedState.interPostInterval, messages: cachedState.messages.compactMap { message -> Message? in
@@ -491,6 +509,9 @@ private class AdMessagesHistoryContextImpl {
             return transaction.getPeer(peerId).flatMap(apiInputPeer)
         }
         |> mapToSignal { inputPeer -> Signal<(interPostInterval: Int32?, startDelay: Int32?, betweenDelay: Int32?, messages: [Message]), NoError> in
+            if (MolteagramInterceptor.shared.current as? MolteagramSettingsStruct)?.disableAds == true {
+                return .single((nil, nil, nil, []))
+            }
             guard let inputPeer else {
                 return .single((nil, nil, nil, []))
             }

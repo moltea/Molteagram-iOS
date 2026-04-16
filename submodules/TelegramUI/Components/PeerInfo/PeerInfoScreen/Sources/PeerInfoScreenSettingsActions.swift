@@ -1,4 +1,5 @@
 import Foundation
+import Molteagram
 import UIKit
 import Display
 import AccountContext
@@ -93,6 +94,10 @@ extension PeerInfoScreenNode {
         case .notificationsAndSounds:
             if let settings = self.data?.globalSettings {
                 push(notificationsAndSoundsController(context: self.context, exceptionsList: settings.notificationExceptions))
+            }
+        case .molteagramSettings:
+            if let settings = self.data?.globalSettings {
+                push(molteagramSettingsController(context: self.context, exceptionsList: settings.notificationExceptions))
             }
         case .privacyAndSecurity:
             if let settings = self.data?.globalSettings {

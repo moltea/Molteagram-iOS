@@ -1,14 +1,15 @@
 {
-	"bundle_id": "ph.telegra.Telegraph",
-	"api_id": "8",
-	"api_hash": "7245de8e747a0d6fbe11f7cc14fcc0bb",
-	"team_id": "C67CF9S4VU",
+	"bundle_id": "{your_bundle_id_here}",
+	"api_id": "{your_telegram_api_id_here}",
+	"api_hash": "{your_telegram_api_hash_here}",
+	"team_id": "{your_team_id_here}",
 	"app_center_id": "0",
 	"is_internal_build": "false",
 	"is_appstore_build": "true",
-	"appstore_id": "686449807",
+	"appstore_id": "6762081644",
 	"app_specific_url_scheme": "tg",
 	"premium_iap_product_id": "org.telegram.telegramPremium.monthly",
 	"enable_siri": true,
-	"enable_icloud": true
+	"enable_icloud": true,
+	"aps_environment": "production"
 }

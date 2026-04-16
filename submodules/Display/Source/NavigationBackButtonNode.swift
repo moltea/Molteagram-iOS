@@ -1,10 +1,11 @@
 import UIKit
 import AsyncDisplayKit
 import AppBundle
+import Display
 
 public class NavigationBackButtonNode: ASControlNode {
     private func fontForCurrentState() -> UIFont {
-        return UIFont.systemFont(ofSize: 17.0)
+        return Font.regular(17.0)
     }
     
     private func attributesForCurrentState() -> [NSAttributedString.Key : AnyObject] {

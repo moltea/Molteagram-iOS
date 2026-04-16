@@ -59,6 +59,8 @@ func titlePanelForChatPresentationInterfaceState(_ chatPresentationInterfaceStat
         switch customChatContents.kind {
         case .hashTagSearch:
             break
+        case .deletedMessages, .editedMessages(_):
+            break
         case .quickReplyMessageInput:
             break
         case .businessLinkSetup:

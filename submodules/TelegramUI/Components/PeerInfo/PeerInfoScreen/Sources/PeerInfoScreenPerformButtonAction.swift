@@ -1,3 +1,4 @@
+import MolteagramCore
 import Foundation
 import UIKit
 import Display
@@ -13,6 +14,7 @@ import NotificationExceptionsScreen
 import TranslateUI
 import TelegramNotices
 import AlertComponent
+import Molteagram
 
 extension PeerInfoScreenNode {
     func performButtonAction(key: PeerInfoHeaderButtonKey, buttonNode: PeerInfoHeaderButtonNode?, gesture: ContextGesture?) {
@@ -1275,6 +1277,23 @@ extension PeerInfoScreenNode {
                             })))
                         }
                     }
+                }
+                
+                if !items.isEmpty {
+                    items.append(.separator)
+                }
+                let lang = presentationData.strings.primaryComponent.languageCode
+                if MolteagramInterceptor.shared.current.saveDeletedMessages {
+                    items.append(.action(ContextMenuActionItem(text: MolteagramStrings.get("Molteagram.DeletedMessages", languageCode: lang), icon: { theme in
+                        return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Delete"), color: theme.contextMenu.primaryColor)
+                    }, action: { [weak self] _, f in
+                        f(.dismissWithoutContent)
+                        guard let self else { return }
+                        if let navigationController = self.controller?.navigationController as? NavigationController {
+                            let screen = makeDeletedMessagesScreen(context: self.context, peerId: self.peerId)
+                            navigationController.pushViewController(screen)
+                        }
+                    })))
                 }
                 
                 return .single(items)

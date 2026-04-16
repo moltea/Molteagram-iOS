@@ -2428,6 +2428,7 @@ public class ChatMessagePollBubbleContentNode: ChatMessageBubbleContentNode {
                 let textConstrainedSize = CGSize(width: constrainedSize.width - horizontalInset - additionalTextRightInset, height: constrainedSize.height)
 
                 var edited = false
+                var deleted = false
                 if item.attributes.updatingMedia != nil {
                     edited = true
                 }
@@ -2441,6 +2442,8 @@ public class ChatMessagePollBubbleContentNode: ChatMessageBubbleContentNode {
                 for attribute in item.message.attributes {
                     if let attribute = attribute as? EditedMessageAttribute {
                         edited = !attribute.isHidden
+                    } else if let attribute = attribute as? DeletedMessageAttribute {
+                        deleted = !attribute.isHidden
                     } else if let attribute = attribute as? ViewCountMessageAttribute {
                         viewCount = attribute.count
                     } else if let attribute = attribute as? ReplyThreadMessageAttribute, case .peer = item.chatLocation {
@@ -2494,6 +2497,7 @@ public class ChatMessagePollBubbleContentNode: ChatMessageBubbleContentNode {
                         context: item.context,
                         presentationData: item.presentationData,
                         edited: edited,
+                        deleted: deleted,
                         impressionCount: viewCount,
                         dateText: dateText,
                         type: statusType,

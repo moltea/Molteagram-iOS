@@ -3,6 +3,7 @@ import Postbox
 import SwiftSignalKit
 import TelegramApi
 import MtProtoKit
+import MolteagramCore
 
 final class CachedRecommendedChannels: Codable {
     public let peerIds: [EnginePeer.Id]
@@ -80,7 +81,7 @@ func _internal_requestRecommendedChannels(account: Account, peerId: EnginePeer.I
         }
     }
     |> mapToSignal { channel, shouldUpdate in
-        if !shouldUpdate {
+        if !shouldUpdate || (MolteagramInterceptor.shared.current as? MolteagramSettingsStruct)?.hideSimilarChannels == true {
             return .complete()
         }
         var inputChannel: Api.InputChannel?
@@ -240,6 +241,9 @@ func _internal_recommendedChannels(account: Account, peerId: EnginePeer.Id?) -> 
     let key = PostboxViewKey.cachedItem(entryId(peerId: peerId))
     return account.postbox.combinedView(keys: [key])
     |> mapToSignal { views -> Signal<RecommendedChannels?, NoError> in
+        if (MolteagramInterceptor.shared.current as? MolteagramSettingsStruct)?.hideSimilarChannels == true {
+            return .single(nil)
+        }
         guard let cachedChannels = (views.views[key] as? CachedItemView)?.value?.get(CachedRecommendedChannels.self) else {
             return .single(nil)
         }

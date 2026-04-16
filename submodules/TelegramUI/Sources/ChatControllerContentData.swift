@@ -1,3 +1,4 @@
+import Molteagram
 import Foundation
 import TelegramPresentationData
 import AccountContext
@@ -1818,11 +1819,15 @@ extension ChatControllerImpl {
                 self.isPeerInfoReady.set(true)
                 
                 let peerView: Signal<PeerView?, NoError> = .single(nil)
-                
+                let lang = strings.primaryComponent.languageCode
                 if case let .customChatContents(customChatContents) = initialSubject {
                     switch customChatContents.kind {
                     case .hashTagSearch:
                         break
+                    case .deletedMessages:
+                        self.state.chatTitleContent = .custom(title: [ChatTitleContent.TitleTextItem(id: AnyHashable(0), content: .text(MolteagramStrings.get("Molteagram.DeletedMessages", languageCode: lang)))], subtitle: nil, isEnabled: false)
+                    case .editedMessages(_):
+                        self.state.chatTitleContent = .custom(title: [ChatTitleContent.TitleTextItem(id: AnyHashable(0), content: .text(MolteagramStrings.get("Molteagram.SaveEditedMessages", languageCode: lang)))], subtitle: nil, isEnabled: false)
                     case let .quickReplyMessageInput(shortcut, shortcutType):
                         switch shortcutType {
                         case .generic:

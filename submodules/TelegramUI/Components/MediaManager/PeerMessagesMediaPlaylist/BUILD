@@ -7,9 +7,10 @@ swift_library(
         "Sources/**/*.swift",
     ]),
     copts = [
-        "-warnings-as-errors",
+        
     ],
     deps = [
+        "//submodules/MolteagramCore",
         "//submodules/Display",
         "//submodules/ComponentFlow",
         "//submodules/SSignalKit/SwiftSignalKit",

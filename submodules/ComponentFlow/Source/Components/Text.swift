@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import Display
 
 public final class Text: Component {
     private final class MeasureState: Equatable {
@@ -86,7 +87,7 @@ public final class Text: Component {
     
     public convenience init(attributedString: NSAttributedString, tintColor: UIColor? = nil) {
         let attributes = attributedString.attributes(at: 0, effectiveRange: nil)
-        let font = attributes[.font] as? UIFont ?? UIFont.systemFont(ofSize: UIFont.systemFontSize)
+        let font = attributes[.font] as? UIFont ?? Font.regular(UIFont.systemFontSize)
         let color = attributes[.foregroundColor] as? UIColor ?? .black
         self.init(
             text: attributedString.string,

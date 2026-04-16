@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import Display
 import ComponentFlow
 
 final class TextView: UIView {
@@ -51,9 +52,9 @@ final class TextView: UIView {
         
         let font: UIFont
         if monospacedDigits {
-            font = UIFont.monospacedDigitSystemFont(ofSize: fontSize, weight: UIFont.Weight(fontWeight))
+            font = Font.with(size: fontSize, weight: Font.Weight(fontWeight), traits: [.monospacedNumbers])
         } else {
-            font = UIFont.systemFont(ofSize: fontSize, weight: UIFont.Weight(fontWeight))
+            font = Font.with(size: fontSize, weight: Font.Weight(fontWeight))
         }
         
         let paragraphStyle = NSMutableParagraphStyle()

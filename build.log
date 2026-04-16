@@ -1,0 +1,305 @@
+INFO: Options provided by the client:
+  Inherited 'common' options: --isatty=0 --terminal_columns=80
+INFO: Reading rc options for 'build' from /Users/moltea/XCodeProjects/Telegram-iOS/.bazelrc:
+  Inherited 'common' options: --features=swift.index_while_building --features=swift.use_global_index_store --features=swift.use_global_module_cache --features=oso_prefix_is_pwd
+INFO: Reading rc options for 'build' from /Users/moltea/XCodeProjects/Telegram-iOS/.bazelrc:
+  'build' options: --action_env=ZERO_AR_DATE=1 --apple_platform_type=ios --enable_platform_specific_config --apple_crosstool_top=@local_config_apple_cc//:toolchain --crosstool_top=@local_config_apple_cc//:toolchain --host_crosstool_top=@local_config_apple_cc//:toolchain --per_file_copt=.*.m$,@-fno-objc-msgsend-selector-stubs --per_file_copt=.*.mm$,@-fno-objc-msgsend-selector-stubs --per_file_copt=.*.m$,@-Wno-deprecated-declarations --per_file_copt=.*.mm$,@-Wno-deprecated-declarations --features=debug_prefix_map_pwd_is_dot --features=swift.cacheable_swiftmodules --features=swift.debug_prefix_map --features=swift.enable_vfsoverlays --strategy=Genrule=standalone --spawn_strategy=standalone --strategy=SwiftCompile=worker
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: target //Telegram:Telegram (1 packages loaded, 0 targets configured)
+Analyzing: target //Telegram:Telegram (1 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //Telegram:Telegram (4 packages loaded, 4114 targets configured).
+[5,836 / 5,871] Compiling Swift module //submodules/TelegramUI:TelegramUI; 1s worker
+[5,836 / 5,871] Compiling Swift module //submodules/TelegramUI:TelegramUI; 11s worker
+[5,836 / 5,871] Compiling Swift module //submodules/TelegramUI:TelegramUI; 41s worker
+INFO: From Compiling Swift module //submodules/TelegramUI:TelegramUI:
+submodules/TelegramUI/Sources/AppDelegate.swift:125:44: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+ 123 |         }
+ 124 |         
+ 125 |         for window in UIApplication.shared.windows {
+     |                                            `- warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+ 126 |             if isKeyboardWindow(window: window) {
+ 127 |                 return window
+
+submodules/TelegramUI/Sources/AppDelegate.swift:850:39: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+ 848 |             }
+ 849 |         }, getTopWindow: {
+ 850 |             for window in application.windows.reversed() {
+     |                                       `- warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+ 851 |                 if window === self.window || window === statusBarHost.keyboardWindow {
+ 852 |                     return window
+
+submodules/TelegramUI/Sources/AppDelegate.swift:855:32: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+ 853 |                 }
+ 854 |             }
+ 855 |             return application.windows.last
+     |                                `- warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+ 856 |         }, displayNotification: { text in
+ 857 |         }, applicationInForeground: self.isInForegroundPromise.get(),
+
+submodules/TelegramUI/Sources/AppDelegate.swift:1894:34: warning: 'applicationIconBadgeNumber' was deprecated in iOS 17.0: Use -[UNUserNotificationCenter setBadgeCount:withCompletionHandler:] instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+1892 |                 }
+1893 |             }
+1894 |             UIApplication.shared.applicationIconBadgeNumber = Int(count)
+     |                                  `- warning: 'applicationIconBadgeNumber' was deprecated in iOS 17.0: Use -[UNUserNotificationCenter setBadgeCount:withCompletionHandler:] instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+1895 |         }))
+1896 |     }
+
+submodules/TelegramUI/Sources/AppDelegate.swift:2962:54: warning: 'announcement' was deprecated in iOS 15.0: Announcement authorization is always included [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+2960 |                     }
+2961 |                     if #available(iOS 13.0, *) {
+2962 |                         authorizationOptions.insert(.announcement)
+     |                                                      `- warning: 'announcement' was deprecated in iOS 15.0: Announcement authorization is always included [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+2963 |                     }
+2964 |                     Logger.shared.log("App \(self.episodeId)", "register for notifications: request authorization")
+
+submodules/TelegramUI/Sources/AppDelegate.swift:2990:60: warning: 'allowAnnouncement' was deprecated in iOS 15.0: Announcement option is ignored [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+2988 |                                 carPlayOptions.insert(.allowInCarPlay)
+2989 |                                 if #available(iOS 13.2, *) {
+2990 |                                     carPlayOptions.insert(.allowAnnouncement)
+     |                                                            `- warning: 'allowAnnouncement' was deprecated in iOS 15.0: Announcement option is ignored [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+2991 |                                 }
+2992 |                                 
+
+submodules/TelegramUI/Sources/AppDelegate.swift:3032:41: warning: 'alert' was deprecated in iOS 14.0 [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+3030 |             if let context = self.contextValue {
+3031 |                 if let accountId = accountId, context.context.account.id != accountId || notification.request.content.userInfo["url"] != nil {
+3032 |                     completionHandler([.alert])
+     |                                         `- warning: 'alert' was deprecated in iOS 14.0 [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+3033 |                 }
+3034 |             }
+
+submodules/TelegramUI/Sources/AudioRecordningToneData.swift:24:71: warning: 'tracks' was deprecated in iOS 16.0: Use load(.tracks) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+22 |     }
+23 |     
+24 |     let readerOutput = AVAssetReaderAudioMixOutput(audioTracks: asset.tracks, audioSettings: outputSettings)
+   |                                                                       `- warning: 'tracks' was deprecated in iOS 16.0: Use load(.tracks) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+25 |     
+26 |     if !assetReader.canAdd(readerOutput) {
+
+submodules/TelegramUI/Sources/ChatController.swift:9360:63: warning: 'kUTTypeImage' was deprecated in iOS 15.0: Use UTTypeImage or UTType.image (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+ 9358 |     @available(iOSApplicationExtension 11.0, iOS 11.0, *)
+ 9359 |     public func dropInteraction(_ interaction: UIDropInteraction, canHandle session: UIDropSession) -> Bool {
+ 9360 |         return session.hasItemsConforming(toTypeIdentifiers: [kUTTypeImage as String])
+      |                                                               `- warning: 'kUTTypeImage' was deprecated in iOS 15.0: Use UTTypeImage or UTType.image (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+ 9361 |     }
+ 9362 |     
+
+submodules/TelegramUI/Sources/FetchCachedRepresentations.swift:266:133: warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+264 |                 }, scale: 1.0)
+265 |                 
+266 |                 if let alphaImage = alphaImage, let colorDestination = CGImageDestinationCreateWithData(colorData as CFMutableData, kUTTypeJPEG, 1, nil), let alphaDestination = CGImageDestinationCreateWithData(alphaData as CFMutableData, kUTTypeJPEG, 1, nil) {
+    |                                                                                                                                     `- warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+267 |                     CGImageDestinationSetProperties(colorDestination, NSDictionary() as CFDictionary)
+268 |                     CGImageDestinationSetProperties(alphaDestination, NSDictionary() as CFDictionary)
+
+submodules/TelegramUI/Sources/FetchCachedRepresentations.swift:266:239: warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+264 |                 }, scale: 1.0)
+265 |                 
+266 |                 if let alphaImage = alphaImage, let colorDestination = CGImageDestinationCreateWithData(colorData as CFMutableData, kUTTypeJPEG, 1, nil), let alphaDestination = CGImageDestinationCreateWithData(alphaData as CFMutableData, kUTTypeJPEG, 1, nil) {
+    |                                                                                                                                                                                                                                               `- warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+267 |                     CGImageDestinationSetProperties(colorDestination, NSDictionary() as CFDictionary)
+268 |                     CGImageDestinationSetProperties(alphaDestination, NSDictionary() as CFDictionary)
+
+submodules/TelegramUI/Sources/FetchCachedRepresentations.swift:331:89: warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+329 |                 }, scale: 1.0)!
+330 |                 
+331 |                 if let colorDestination = CGImageDestinationCreateWithURL(url as CFURL, kUTTypeJPEG, 1, nil) {
+    |                                                                                         `- warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+332 |                     CGImageDestinationSetProperties(colorDestination, NSDictionary() as CFDictionary)
+333 |                     
+
+submodules/TelegramUI/Sources/FetchCachedRepresentations.swift:362:111: warning: 'duration' was deprecated in iOS 16.0: Use load(.duration) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+360 |         imageGenerator.maximumSize = maxDimensions
+361 |         imageGenerator.appliesPreferredTrackTransform = true
+362 |         let fullSizeImage = try imageGenerator.copyCGImage(at: CMTime(seconds: 0.0, preferredTimescale: asset.duration.timescale), actualTime: nil)
+    |                                                                                                               `- warning: 'duration' was deprecated in iOS 16.0: Use load(.duration) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+363 |         let _ = try? FileManager.default.removeItem(atPath: tempFilePath)
+364 |         return UIImage(cgImage: fullSizeImage)
+
+submodules/TelegramUI/Sources/FetchCachedRepresentations.swift:386:119: warning: 'duration' was deprecated in iOS 16.0: Use load(.duration) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+384 |                 imageGenerator.appliesPreferredTrackTransform = true
+385 |                 
+386 |                 let fullSizeImage = try imageGenerator.copyCGImage(at: CMTime(seconds: 0.0, preferredTimescale: asset.duration.timescale), actualTime: nil)
+    |                                                                                                                       `- warning: 'duration' was deprecated in iOS 16.0: Use load(.duration) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+387 |                 
+388 |                 let path = NSTemporaryDirectory() + "\(Int64.random(in: Int64.min ... Int64.max))"
+
+submodules/TelegramUI/Sources/FetchCachedRepresentations.swift:391:89: warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+389 |                 let url = URL(fileURLWithPath: path)
+390 |                 
+391 |                 if let colorDestination = CGImageDestinationCreateWithURL(url as CFURL, kUTTypeJPEG, 1, nil) {
+    |                                                                                         `- warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+392 |                     CGImageDestinationSetProperties(colorDestination, NSDictionary() as CFDictionary)
+393 |                     
+
+submodules/TelegramUI/Sources/FetchCachedRepresentations.swift:432:97: warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+430 |                         }, scale: 1.0)!
+431 |                         
+432 |                         if let colorDestination = CGImageDestinationCreateWithURL(url as CFURL, kUTTypeJPEG, 1, nil) {
+    |                                                                                                 `- warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+433 |                             CGImageDestinationSetProperties(colorDestination, NSDictionary() as CFDictionary)
+434 |                             
+
+submodules/TelegramUI/Sources/FetchCachedRepresentations.swift:460:141: warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+458 |                 let url = URL(fileURLWithPath: path)
+459 |                 
+460 |                 if let colorImage = blurredImage(image, radius: 30.0), let colorDestination = CGImageDestinationCreateWithURL(url as CFURL, kUTTypeJPEG, 1, nil) {
+    |                                                                                                                                             `- warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+461 |                     CGImageDestinationSetProperties(colorDestination, NSDictionary() as CFDictionary)
+462 | 
+
+submodules/TelegramUI/Sources/FetchCachedRepresentations.swift:509:141: warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+507 |                 let url = URL(fileURLWithPath: path)
+508 |                 
+509 |                 if let colorImage = blurredImage(image, radius: 30.0), let colorDestination = CGImageDestinationCreateWithURL(url as CFURL, kUTTypeJPEG, 1, nil) {
+    |                                                                                                                                             `- warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+510 |                     CGImageDestinationSetProperties(colorDestination, NSDictionary() as CFDictionary)
+511 |                     
+
+submodules/TelegramUI/Sources/FetchCachedRepresentations.swift:552:93: warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+550 |                     })!
+551 |                     
+552 |                     if let colorDestination = CGImageDestinationCreateWithURL(url as CFURL, kUTTypeJPEG, 1, nil) {
+    |                                                                                             `- warning: 'kUTTypeJPEG' was deprecated in iOS 15.0: Use UTTypeJPEG or UTType.jpeg (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+553 |                         CGImageDestinationSetProperties(colorDestination, NSDictionary() as CFDictionary)
+554 |                         
+
+submodules/TelegramUI/Sources/OpenResolvedUrl.swift:1126:47: warning: 'tracks(withMediaType:)' was deprecated in iOS 16.0: Use loadTracks(withMediaType:) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+1124 |                     let asset = AVURLAsset(url: URL(fileURLWithPath: path))
+1125 |                     var dimensions = PixelDimensions(width: 1080, height: 1920)
+1126 |                     if let videoTrack = asset.tracks(withMediaType: .video).first {
+     |                                               `- warning: 'tracks(withMediaType:)' was deprecated in iOS 16.0: Use loadTracks(withMediaType:) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+1127 |                         dimensions = PixelDimensions(videoTrack.naturalSize)
+1128 |                     }
+
+submodules/TelegramUI/Sources/OpenResolvedUrl.swift:1127:65: warning: 'naturalSize' was deprecated in iOS 16.0: Use load(.naturalSize) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+1125 |                     var dimensions = PixelDimensions(width: 1080, height: 1920)
+1126 |                     if let videoTrack = asset.tracks(withMediaType: .video).first {
+1127 |                         dimensions = PixelDimensions(videoTrack.naturalSize)
+     |                                                                 `- warning: 'naturalSize' was deprecated in iOS 16.0: Use load(.naturalSize) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+1128 |                     }
+1129 |                     return .video(videoPath: path, thumbnail: nil, mirror: false, additionalVideoPath: nil, additionalThumbnail: nil, dimensions: dimensions, duration: asset.duration.seconds, videoPositionChanges: [], additionalVideoPosition: .bottomLeft, fromCamera: false)
+
+submodules/TelegramUI/Sources/OpenResolvedUrl.swift:1129:175: warning: 'duration' was deprecated in iOS 16.0: Use load(.duration) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+1127 |                         dimensions = PixelDimensions(videoTrack.naturalSize)
+1128 |                     }
+1129 |                     return .video(videoPath: path, thumbnail: nil, mirror: false, additionalVideoPath: nil, additionalThumbnail: nil, dimensions: dimensions, duration: asset.duration.seconds, videoPositionChanges: [], additionalVideoPosition: .bottomLeft, fromCamera: false)
+     |                                                                                                                                                                               `- warning: 'duration' was deprecated in iOS 16.0: Use load(.duration) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+1130 |                 }
+1131 |                 return nil
+
+submodules/TelegramUI/Sources/SaveMediaToFiles.swift:89:44: warning: 'commonMetadata' was deprecated in iOS 16.0: Use load(.commonMetadata) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+ 87 |                     var artist: String?
+ 88 |                     var title: String?
+ 89 |                     for data in audioAsset.commonMetadata {
+    |                                            `- warning: 'commonMetadata' was deprecated in iOS 16.0: Use load(.commonMetadata) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+ 90 |                         if data.commonKey == .commonKeyArtist {
+ 91 |                             artist = data.stringValue
+
+submodules/TelegramUI/Sources/SaveMediaToFiles.swift:91:43: warning: 'stringValue' was deprecated in iOS 16.0: Use load(.stringValue) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+ 89 |                     for data in audioAsset.commonMetadata {
+ 90 |                         if data.commonKey == .commonKeyArtist {
+ 91 |                             artist = data.stringValue
+    |                                           `- warning: 'stringValue' was deprecated in iOS 16.0: Use load(.stringValue) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+ 92 |                         }
+ 93 |                         if data.commonKey == .commonKeyTitle {
+
+submodules/TelegramUI/Sources/SaveMediaToFiles.swift:94:42: warning: 'stringValue' was deprecated in iOS 16.0: Use load(.stringValue) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+ 92 |                         }
+ 93 |                         if data.commonKey == .commonKeyTitle {
+ 94 |                             title = data.stringValue
+    |                                          `- warning: 'stringValue' was deprecated in iOS 16.0: Use load(.stringValue) instead [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+ 95 |                         }
+ 96 |                     }
+
+submodules/TelegramUI/Sources/SpotlightContacts.swift:152:82: warning: 'kUTTypeText' was deprecated in iOS 15.0: Use UTTypeText or UTType.text (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+150 |                 let itemDataPath = path + "/data.json"
+151 |                 
+152 |                 let attributeSet = CSSearchableItemAttributeSet(itemContentType: kUTTypeText as String)
+    |                                                                                  `- warning: 'kUTTypeText' was deprecated in iOS 15.0: Use UTTypeText or UTType.text (swift) instead. [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration\DeprecatedDeclaration]8;;\]
+153 |                 attributeSet.version = "\(UInt64.random(in: 0 ..< UInt64.max))"
+154 |                 if !item.firstName.isEmpty && !item.lastName.isEmpty {
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+[5,837 / 5,871] [Prepa] Linking submodules/TelegramUI/libTelegramUI.a
+[5,840 / 5,871] Compiling Swift module //Telegram:NotificationContentExtensionLib; 1s worker ... (2 actions running)
+[5,842 / 5,871] Linking Telegram/TelegramUIFramework_bin_unstripped; 2s local
+INFO: From Linking Telegram/TelegramUIFramework_bin_unstripped:
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtde2e.a[2](bip39.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtde2e.a[3](BitString.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtde2e.a[4](Blockchain.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtde2e.a[5](Call.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtde2e.a[7](DecryptedKey.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtde2e.a[8](e2e_api.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtde2e.a[9](EncryptedKey.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtde2e.a[10](EncryptedStorage.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtde2e.a[11](Keys.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtde2e.a[12](MessageEncryption.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtde2e.a[13](Mnemonic.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtde2e.a[14](QRHandshake.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtde2e.a[15](Trie.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtde2e.a[16](e2e_api.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[2](Clocks.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[3](FileFd.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[8](PollFlags.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[12](sleep.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[15](Stat.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[16](StdStreams.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[17](thread_local.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[28](NativeFd.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[37](base64.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[38](BigNum.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[39](buffer.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[41](check.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[42](crypto.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[43](Ed25519.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[45](ExitGuard.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[49](FlatHashTable.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[57](logging.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[58](misc.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[62](Random.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[64](Slice.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[65](StackAllocator.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[66](Status.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[67](StringBuilder.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[69](Time.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[70](Timer.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[71](tl_parsers.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[73](TsCerr.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[76](unicode.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: object file (/private/var/tmp/_bazel_moltea/39a11eb85ba5b2b64dbd32a2dac48726/execroot/_main/bazel-out/ios_arm64-opt-ios-arm64-min17.0-ST-33b99337744b/bin/third-party/td/Public/td/lib/libtdutils.a[77](utf8.cpp.o)) was built for newer 'iOS' version (26.4) than being linked (17.0)
+ld: warning: reducing alignment of section __DATA,__common from 0x8000 to 0x4000 because it exceeds segment maximum alignment
+[5,843 / 5,871] [Prepa] ObjcBinarySymbolStrip Telegram/TelegramUIFramework_bin
+[5,845 / 5,871] [Prepa] Creating symlink Telegram/TelegramUIFramework_lipobin.dylib
+[5,868 / 5,871] Processing and signing TelegramUIFramework; 0s local
+[5,869 / 5,871] [Prepa] Bundling Telegram
+[5,870 / 5,871] Processing and signing Telegram; 0s local
+INFO: Found 1 target...
+Target //Telegram:Telegram up-to-date:
+  bazel-bin/Telegram/Telegram.ipa
+  bazel-bin/Telegram/Telegram.app.dSYM/Contents/Resources/DWARF/Telegram
+  bazel-bin/Telegram/Telegram.app.dSYM/Contents/Info.plist
+  bazel-bin/Telegram/MtProtoKitFramework.framework.dSYM/Contents/Resources/DWARF/MtProtoKitFramework
+  bazel-bin/Telegram/MtProtoKitFramework.framework.dSYM/Contents/Info.plist
+  bazel-bin/Telegram/SwiftSignalKitFramework.framework.dSYM/Contents/Resources/DWARF/SwiftSignalKitFramework
+  bazel-bin/Telegram/SwiftSignalKitFramework.framework.dSYM/Contents/Info.plist
+  bazel-bin/Telegram/PostboxFramework.framework.dSYM/Contents/Resources/DWARF/PostboxFramework
+  bazel-bin/Telegram/PostboxFramework.framework.dSYM/Contents/Info.plist
+  bazel-bin/Telegram/TelegramCoreFramework.framework.dSYM/Contents/Resources/DWARF/TelegramCoreFramework
+  bazel-bin/Telegram/TelegramCoreFramework.framework.dSYM/Contents/Info.plist
+  bazel-bin/Telegram/TelegramUIFramework.framework.dSYM/Contents/Resources/DWARF/TelegramUIFramework
+  bazel-bin/Telegram/TelegramUIFramework.framework.dSYM/Contents/Info.plist
+  bazel-bin/Telegram/NotificationServiceExtensionv1.appex.dSYM/Contents/Resources/DWARF/NotificationServiceExtensionv1
+  bazel-bin/Telegram/NotificationServiceExtensionv1.appex.dSYM/Contents/Info.plist
+  bazel-bin/Telegram/SiriIntents.appex.dSYM/Contents/Resources/DWARF/SiriIntents
+  bazel-bin/Telegram/SiriIntents.appex.dSYM/Contents/Info.plist
+  bazel-bin/Telegram/NotificationContentExtension.appex.dSYM/Contents/Resources/DWARF/NotificationContentExtension
+  bazel-bin/Telegram/NotificationContentExtension.appex.dSYM/Contents/Info.plist
+INFO: Elapsed time: 120.074s, Critical Path: 119.08s
+INFO: 18 processes: 2078 action cache hit, 4 internal, 11 local, 3 worker.
+INFO: Build completed successfully, 18 total actions
+TelegramBuild: running
+/Users/moltea/XCodeProjects/Telegram-iOS/build-input/bazel-8.4.2-darwin-arm64 build Telegram/Telegram --announce_rc --features=swift.use_global_module_cache --verbose_failures --remote_cache_async --define=buildNumber=3 -c opt --ios_multi_cpus=arm64 --watchos_cpus=arm64_32 --apple_generate_dsym --output_groups=+dsyms --features=swift.opt_uses_wmo --features=swift.opt_uses_osize --features=dead_strip --objc_enable_binary_stripping

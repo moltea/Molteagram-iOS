@@ -8,9 +8,10 @@
 
 import UIKit
 import GraphCore
+import Display
 
 class ChartVisibilityItemView: UIView {
-    static let textFont = UIFont.systemFont(ofSize: 14, weight: .medium)
+    static let textFont = Font.medium(14)
 
     let checkButton: UIButton = UIButton(type: .system)
     
@@ -31,7 +32,7 @@ class ChartVisibilityItemView: UIView {
     
     func setupView() {
         checkButton.frame = bounds
-        checkButton.titleLabel?.font = ChartVisibilityItemView.textFont
+        checkButton.titleLabel?.font = Font.medium(14)
         checkButton.layer.cornerRadius = 15
         checkButton.layer.masksToBounds = true
         checkButton.addTarget(self, action: #selector(didTapButton), for: .touchUpInside)
