@@ -6,7 +6,7 @@
 	"app_center_id": "0",
 	"is_internal_build": "true",
 	"is_appstore_build": "false",
-	"appstore_id": "0",
+	"appstore_id": "{your_appstore_id_here",
 	"app_specific_url_scheme": "tg",
 	"premium_iap_product_id": "",
 	"enable_siri": false,
