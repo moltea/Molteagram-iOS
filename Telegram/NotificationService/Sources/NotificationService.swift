@@ -2614,8 +2614,9 @@ final class NotificationService: UNNotificationServiceExtension {
                         
                         if let content = content.with({ $0 }) {
                             contentHandler(content.generate())
-                        } else if let initialContent = strongSelf.initialContent {
-                            contentHandler(initialContent)
+                        } else {
+                            // Suppress the APNs fallback ("You have a new message") by returning empty content
+                            contentHandler(UNMutableNotificationContent())
                         }
                     } else {
                         Logger.shared.log("NotificationService \(episode)", "Attempted to repeatedly complete handling notification")
@@ -2634,8 +2635,9 @@ final class NotificationService: UNNotificationServiceExtension {
             
             if let content = self.content.with({ $0 }) {
                 contentHandler(content.generate())
-            } else if let initialContent = self.initialContent {
-                contentHandler(initialContent)
+            } else {
+                // Suppress the APNs fallback ("You have a new message") by returning empty content
+                contentHandler(UNMutableNotificationContent())
             }
         }
     }
