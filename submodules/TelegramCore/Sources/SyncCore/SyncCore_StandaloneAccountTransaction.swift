@@ -207,34 +207,37 @@ public let telegramPostboxSeedConfiguration: SeedConfiguration = {
             }
         },
         customTagsFromAttributes: { attributes in
+            var result: [MemoryBuffer] = []
             var isTags = false
             
             for attribute in attributes {
-                if let attribute = attribute as? PendingReactionsMessageAttribute, attribute.isTags {
+                if let attribute = attribute as? EditedCloneMessageAttribute {
+                    result.append(
+                        molteagramEditedCloneCustomTag(
+                            originalPeerId: PeerId(attribute.originalPeerIdInt64),
+                            originalNamespace: attribute.originalNamespace,
+                            originalMessageId: attribute.originalMessageId
+                        )
+                    )
+                } else if let attribute = attribute as? PendingReactionsMessageAttribute, attribute.isTags {
                     isTags = true
-                    break
                 } else if let attribute = attribute as? ReactionsMessageAttribute, attribute.isTags {
                     isTags = true
-                    break
                 }
             }
             
             if !isTags {
-                return []
+                return result
             }
             
             guard let reactions = mergedMessageReactions(attributes: attributes, isTags: isTags), !reactions.reactions.isEmpty else {
-                return []
+                return result
             }
             
-            var result: [MemoryBuffer] = []
-            
-            for reaction in reactions.reactions {
-                if reaction.isSelected {
-                    let tag = ReactionsMessageAttribute.messageTag(reaction: reaction.value)
-                    if !result.contains(tag) {
-                        result.append(tag)
-                    }
+            for reaction in reactions.reactions where reaction.isSelected {
+                let tag = ReactionsMessageAttribute.messageTag(reaction: reaction.value)
+                if !result.contains(tag) {
+                    result.append(tag)
                 }
             }
             

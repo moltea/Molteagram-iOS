@@ -1324,7 +1324,8 @@ private final class NotificationServiceHandler {
                             } else if let alert = aps["alert"] as? String {
                                 content.body = alert
                             } else {
-                                content.body = "You have a new message"
+                                completed()
+                                return
                             }
                             updateCurrentContent(content)
                             completed()

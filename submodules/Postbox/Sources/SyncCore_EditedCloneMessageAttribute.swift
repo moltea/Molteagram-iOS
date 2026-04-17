@@ -27,3 +27,23 @@ public class EditedCloneMessageAttribute: MessageAttribute {
         encoder.encodeInt32(self.date, forKey: "d")
     }
 }
+
+public let molteagramEditedCloneNamespace: MessageId.Namespace = 100
+
+public func molteagramEditedCloneCustomTag(
+    originalPeerId: PeerId,
+    originalNamespace: MessageId.Namespace,
+    originalMessageId: MessageId.Id
+) -> MemoryBuffer {
+    var data = Data(capacity: 16)
+
+    var peerIdValue = originalPeerId.toInt64().littleEndian
+    var namespaceValue = originalNamespace.littleEndian
+    var messageIdValue = originalMessageId.littleEndian
+
+    withUnsafeBytes(of: &peerIdValue) { data.append(contentsOf: $0) }
+    withUnsafeBytes(of: &namespaceValue) { data.append(contentsOf: $0) }
+    withUnsafeBytes(of: &messageIdValue) { data.append(contentsOf: $0) }
+
+    return MemoryBuffer(data: data)
+}
