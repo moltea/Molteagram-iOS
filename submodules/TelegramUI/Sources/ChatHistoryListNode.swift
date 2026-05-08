@@ -2224,16 +2224,10 @@ public final class ChatHistoryListNodeImpl: ListViewImpl, ChatHistoryNode, ChatH
                     customChannelDiscussionReadState: customChannelDiscussionReadState,
                     customThreadOutgoingReadState: customThreadOutgoingReadState,
                     cachedData: data.cachedData,
-<<<<<<< HEAD
                     adMessage: filteredAdMessage,
                     dynamicAdMessages: filteredDynamicAdMessages,
-                    isMusicPlaylist:  isMusicPlaylist
-=======
-                    adMessage: allAdMessages.fixed,
-                    dynamicAdMessages: allAdMessages.opportunistic,
-                    isMusicPlaylist: isMusicPlaylist,
+                    isMusicPlaylist:  isMusicPlaylist,
                     pinToTopStableId: pinToTopStableId
->>>>>>> telegram/master
                 )
                 let lastHeaderId = filteredEntries.last.flatMap { listMessageDateHeaderId(timestamp: $0.index.timestamp) } ?? 0
                 let processedView = ChatHistoryView(originalView: view, filteredEntries: filteredEntries, associatedData: associatedData, lastHeaderId: lastHeaderId, id: id, locationInput: update.2, ignoreMessagesInTimestampRange: update.3, ignoreMessageIds: update.4)

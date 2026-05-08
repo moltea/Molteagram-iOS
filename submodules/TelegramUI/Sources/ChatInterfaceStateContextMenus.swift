@@ -1664,10 +1664,10 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             if let image = media as? TelegramMediaImage, let _ = largestImageRepresentation(image.representations) {
             } else { notShow = true }
             if !notShow {
-                actions.append(.action(ContextMenuActionItem(text: chatPresentationInterfaceState.strings.Gallery_SaveImage, icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Save"), color: theme.actionSheet.primaryTextColor) }, action: { _, f in
-                    f(.default)
+                actions.append(.action(ContextMenuActionItem(text: chatPresentationInterfaceState.strings.Gallery_SaveImage, icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Save"), color: theme.actionSheet.primaryTextColor) }, action: { _ in
+                    // f(.default)
                 
-                    let _ = (SaveToCameraRoll.saveToCameraRoll(context: context, postbox: context.account.postbox, userLocation: .peer(message.id.peerId), mediaReference: mediaReference)
+                    let _ = (SaveToCameraRoll.saveToCameraRoll(context: context, userLocation: .peer(message.id.peerId), mediaReference: mediaReference)
                     |> deliverOnMainQueue).start(completed: {
                         let presentationData = context.sharedContext.currentPresentationData.with { $0 }
                         controllerInteraction.presentControllerInCurrent(UndoOverlayController(presentationData: presentationData, content: .mediaSaved(text: chatPresentationInterfaceState.strings.Gallery_ImageSaved), elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), nil)
