@@ -23,6 +23,7 @@ final class PeerInfoInteraction {
     let openAddContact: () -> Void
     let updateBlocked: (Bool) -> Void
     let openReport: (PeerInfoReportType) -> Void
+    let openDeleteReaction: (MessageId) -> Void
     let openShareBot: () -> Void
     let openAddBotToGroup: () -> Void
     let performBotCommand: (PeerInfoBotCommand) -> Void
@@ -42,7 +43,7 @@ final class PeerInfoInteraction {
     let openPermissions: () -> Void
     let openLocation: () -> Void
     let editingOpenSetupLocation: () -> Void
-    let openPeerInfo: (Peer, Bool) -> Void
+    let openPeerInfo: (EnginePeer, Bool) -> Void
     let performMemberAction: (PeerInfoMember, PeerInfoMemberAction) -> Void
     let openPeerInfoContextMenu: (PeerInfoContextSubject, ASDisplayNode, CGRect?) -> Void
     let performBioLinkAction: (TextLinkItemActionType, TextLinkItem) -> Void
@@ -84,6 +85,7 @@ final class PeerInfoInteraction {
     let editingOpenVerifyAccounts: () -> Void
     let editingToggleAutoTranslate: (Bool) -> Void
     let displayAutoTranslateLocked: () -> Void
+    let editingOpenBusinessChatBots: () -> Void
     let getController: () -> ViewController?
     
     init(
@@ -101,6 +103,7 @@ final class PeerInfoInteraction {
         openAddContact: @escaping () -> Void,
         updateBlocked: @escaping (Bool) -> Void,
         openReport: @escaping (PeerInfoReportType) -> Void,
+        openDeleteReaction: @escaping (MessageId) -> Void,
         openShareBot: @escaping () -> Void,
         openAddBotToGroup: @escaping () -> Void,
         performBotCommand: @escaping (PeerInfoBotCommand) -> Void,
@@ -120,7 +123,7 @@ final class PeerInfoInteraction {
         openPermissions: @escaping () -> Void,
         openLocation: @escaping () -> Void,
         editingOpenSetupLocation: @escaping () -> Void,
-        openPeerInfo: @escaping (Peer, Bool) -> Void,
+        openPeerInfo: @escaping (EnginePeer, Bool) -> Void,
         performMemberAction: @escaping (PeerInfoMember, PeerInfoMemberAction) -> Void,
         openPeerInfoContextMenu: @escaping (PeerInfoContextSubject, ASDisplayNode, CGRect?) -> Void,
         performBioLinkAction: @escaping (TextLinkItemActionType, TextLinkItem) -> Void,
@@ -162,6 +165,7 @@ final class PeerInfoInteraction {
         editingOpenVerifyAccounts: @escaping () -> Void,
         editingToggleAutoTranslate: @escaping (Bool) -> Void,
         displayAutoTranslateLocked: @escaping () -> Void,
+        editingOpenBusinessChatBots: @escaping () -> Void,
         getController: @escaping () -> ViewController?
     ) {
         self.openUsername = openUsername
@@ -178,6 +182,7 @@ final class PeerInfoInteraction {
         self.openAddContact = openAddContact
         self.updateBlocked = updateBlocked
         self.openReport = openReport
+        self.openDeleteReaction = openDeleteReaction
         self.openShareBot = openShareBot
         self.openAddBotToGroup = openAddBotToGroup
         self.performBotCommand = performBotCommand
@@ -239,6 +244,7 @@ final class PeerInfoInteraction {
         self.editingOpenVerifyAccounts = editingOpenVerifyAccounts
         self.editingToggleAutoTranslate = editingToggleAutoTranslate
         self.displayAutoTranslateLocked = displayAutoTranslateLocked
+        self.editingOpenBusinessChatBots = editingOpenBusinessChatBots
         self.getController = getController
     }
 }

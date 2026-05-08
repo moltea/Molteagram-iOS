@@ -2322,6 +2322,74 @@ final class PostboxImpl {
         )
     }
 
+    private func encodedMessageAttributeData(_ attribute: MessageAttribute) -> Data {
+        let encoder = PostboxEncoder()
+        encoder.encodeRootObject(attribute)
+        return encoder.makeData()
+    }
+
+    private func significantAttributeData(in attributes: [MessageAttribute]) -> Data? {
+        for attribute in attributes {
+            if String(describing: type(of: attribute)) == "TextEntitiesMessageAttribute" {
+                return self.encodedMessageAttributeData(attribute)
+            }
+        }
+        return nil
+    }
+
+    private func areSignificantAttributesEqual(_ lhs: [MessageAttribute], _ rhs: [MessageAttribute]) -> Bool {
+        self.significantAttributeData(in: lhs) == self.significantAttributeData(in: rhs)
+    }
+
+    private func areMediaArraysEqual(_ lhs: [Media], _ rhs: [Media]) -> Bool {
+        guard lhs.count == rhs.count else {
+            return false
+        }
+
+        for i in 0 ..< lhs.count {
+            if !lhs[i].isEqual(to: rhs[i]) {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    private func hasSignificantEdit(from currentMessage: Message, to updatedMessage: StoreMessage) -> Bool {
+        if currentMessage.text != updatedMessage.text {
+            return true
+        }
+        if currentMessage.forwardInfo?.author?.id != updatedMessage.forwardInfo?.authorId {
+            return true
+        }
+        if currentMessage.forwardInfo?.source?.id != updatedMessage.forwardInfo?.sourceId {
+            return true
+        }
+        if currentMessage.forwardInfo?.sourceMessageId != updatedMessage.forwardInfo?.sourceMessageId {
+            return true
+        }
+        if currentMessage.forwardInfo?.date != updatedMessage.forwardInfo?.date {
+            return true
+        }
+        if currentMessage.forwardInfo?.authorSignature != updatedMessage.forwardInfo?.authorSignature {
+            return true
+        }
+        if currentMessage.forwardInfo?.psaType != updatedMessage.forwardInfo?.psaType {
+            return true
+        }
+        if currentMessage.forwardInfo?.flags != updatedMessage.forwardInfo?.flags {
+            return true
+        }
+        if !self.areMediaArraysEqual(currentMessage.media, updatedMessage.media) {
+            return true
+        }
+        if !self.areSignificantAttributesEqual(currentMessage.attributes, updatedMessage.attributes) {
+            return true
+        }
+
+        return false
+    }
+
     private func softDeleteMessages(_ messageIds: [MessageId], transaction: Transaction) {
         let date = Int32(Date().timeIntervalSince1970)
 
@@ -3167,7 +3235,7 @@ final class PostboxImpl {
             if case let .update(updatedMessage) = update(message) {
                 let saveEditedMessages = self.molteagramSettingValue(key: "Molteagram_saveEditedMessages")
                 
-                let hasSignificantChange = message.text != updatedMessage.text || message.media.count != updatedMessage.media.count
+                let hasSignificantChange = self.hasSignificantEdit(from: message, to: updatedMessage)
                 if saveEditedMessages && hasSignificantChange {
                     let cloneGloballyUniqueId: Int64 = Int64.random(in: 1...Int64.max)
                     let cloneForwardInfo = message.forwardInfo.flatMap { StoreMessageForwardInfo($0) }
