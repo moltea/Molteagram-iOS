@@ -3249,7 +3249,7 @@ final class PostboxImpl {
                         date: Int32(Date().timeIntervalSince1970)
                     ))
                     
-                    let cloneStoreMessage = StoreMessage(
+                    let cloneStoreMessage =  StoreMessage(
                         id: .Partial(message.id.peerId, molteagramEditedCloneNamespace),
                         customStableId: nil,
                         globallyUniqueId: cloneGloballyUniqueId,
