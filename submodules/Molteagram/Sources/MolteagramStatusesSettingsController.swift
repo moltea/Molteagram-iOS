@@ -620,7 +620,7 @@ public func molteagramStatusesSettingsController(context: AccountContext, except
                             case Namespaces.Peer.CloudUser:
                                 users[key] = NotificationExceptionWrapper(settings: value, peer: peer)
                             default:
-                                if let peer = peer as? TelegramChannel, case .broadcast = peer.info {
+                                if case let .channel(peer) = peer, case .broadcast = peer.info {
                                     channels[key] = NotificationExceptionWrapper(settings: value, peer: .channel(peer))
                                 } else {
                                     groups[key] = NotificationExceptionWrapper(settings: value, peer: peer)
@@ -632,7 +632,7 @@ public func molteagramStatusesSettingsController(context: AccountContext, except
                         case Namespaces.Peer.CloudUser:
                             users[key] = NotificationExceptionWrapper(settings: value, peer: peer)
                         default:
-                            if let peer = peer as? TelegramChannel, case .broadcast = peer.info {
+                            if case let .channel(peer) = peer, case .broadcast = peer.info {
                                 channels[key] = NotificationExceptionWrapper(settings: value, peer: .channel(peer))
                             } else {
                                 groups[key] = NotificationExceptionWrapper(settings: value, peer: peer)
