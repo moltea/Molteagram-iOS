@@ -1664,8 +1664,8 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             if let image = media as? TelegramMediaImage, let _ = largestImageRepresentation(image.representations) {
             } else { notShow = true }
             if !notShow {
-                actions.append(.action(ContextMenuActionItem(text: chatPresentationInterfaceState.strings.Gallery_SaveImage, icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Save"), color: theme.actionSheet.primaryTextColor) }, action: { _ in
-                    // f(.default)
+                actions.append(.action(ContextMenuActionItem(text: chatPresentationInterfaceState.strings.Gallery_SaveImage, icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Save"), color: theme.actionSheet.primaryTextColor) }, action: { _, f in
+                    f(.default)
                 
                     let _ = (SaveToCameraRoll.saveToCameraRoll(context: context, userLocation: .peer(message.id.peerId), mediaReference: mediaReference)
                     |> deliverOnMainQueue).start(completed: {

@@ -2296,6 +2296,14 @@ final class PostboxImpl {
         return defaults.object(forKey: key) as? Bool ?? false
     }
 
+    private func molteagramArchivedMessageFlags(from flags: MessageFlags) -> StoreMessageFlags {
+        var result = StoreMessageFlags(flags)
+        result.remove(.Unsent)
+        result.remove(.Sending)
+        result.remove(.Failed)
+        return result
+    }
+
     private func makeSoftDeletedMessage(_ message: Message, date: Int32) -> StoreMessage {
         var updatedAttributes = message.attributes.filter { !($0 is DeletedMessageAttribute) }
         updatedAttributes.append(DeletedMessageAttribute(date: date, isHidden: false))
@@ -2310,7 +2318,7 @@ final class PostboxImpl {
             groupingKey: message.groupingKey,
             threadId: message.threadId,
             timestamp: message.timestamp,
-            flags: StoreMessageFlags(message.flags),
+            flags: self.molteagramArchivedMessageFlags(from: message.flags),
             tags: message.tags,
             globalTags: message.globalTags,
             localTags: message.localTags.union(molteagramDeletedTag),
@@ -3256,7 +3264,7 @@ final class PostboxImpl {
                         groupingKey: message.groupingKey,
                         threadId: message.threadId,
                         timestamp: message.timestamp,
-                        flags: StoreMessageFlags(message.flags),
+                        flags: self.molteagramArchivedMessageFlags(from: message.flags),
                         tags: message.tags,
                         globalTags: message.globalTags,
                         localTags: message.localTags.union(LocalMessageTags(rawValue: 1 << 4)),
