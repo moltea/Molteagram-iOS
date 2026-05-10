@@ -109,8 +109,10 @@
     bool _canSchedule;
     bool _reminder;
     bool _hasTimer;
+    bool _hasRoundVideo;
     bool _autorotationWasEnabled;
     bool _dismissed;
+    NSString *_roundVideoTitle;
     
     UIVisualEffectView *_effectView;
     TGModernButton *_sendButton;
@@ -121,12 +123,17 @@
     TGMediaPickerSendActionSheetItemView *_sendWhenOnlineButton;
     TGMediaPickerSendActionSheetItemView *_scheduleButton;
     TGMediaPickerSendActionSheetItemView *_timerButton;
+    TGMediaPickerSendActionSheetItemView *_roundVideoButton;
 }
 @end
 
 @implementation TGMediaPickerSendActionSheetController
 
 - (instancetype)initWithContext:(id<LegacyComponentsContext>)context isDark:(bool)isDark sendButtonFrame:(CGRect)sendButtonFrame canSendSilently:(bool)canSendSilently canSendWhenOnline:(bool)canSendWhenOnline canSchedule:(bool)canSchedule reminder:(bool)reminder hasTimer:(bool)hasTimer {
+    return [self initWithContext:context isDark:isDark sendButtonFrame:sendButtonFrame canSendSilently:canSendSilently canSendWhenOnline:canSendWhenOnline canSchedule:canSchedule reminder:reminder hasTimer:hasTimer hasRoundVideo:false roundVideoTitle:@""];
+}
+
+- (instancetype)initWithContext:(id<LegacyComponentsContext>)context isDark:(bool)isDark sendButtonFrame:(CGRect)sendButtonFrame canSendSilently:(bool)canSendSilently canSendWhenOnline:(bool)canSendWhenOnline canSchedule:(bool)canSchedule reminder:(bool)reminder hasTimer:(bool)hasTimer hasRoundVideo:(bool)hasRoundVideo roundVideoTitle:(NSString *)roundVideoTitle {
     self = [super initWithContext:context];
     if (self != nil) {
         _context = context;
@@ -137,6 +144,8 @@
         _canSchedule = canSchedule;
         _reminder = reminder;
         _hasTimer = hasTimer;
+        _hasRoundVideo = hasRoundVideo;
+        _roundVideoTitle = [roundVideoTitle copy];
     }
     return self;
 }
@@ -166,7 +175,7 @@
     
     __weak TGMediaPickerSendActionSheetController *weakSelf = self;
     if (_canSendSilently) {
-        _sendSilentlyButton = [[TGMediaPickerSendActionSheetItemView alloc] initWithTitle:TGLocalized(@"Conversation.SendMessage.SendSilently") icon:TGComponentsImageNamed(@"Editor/Silently") isDark:_isDark isLast:!_canSchedule && !_hasTimer && !_canSendWhenOnline];
+        _sendSilentlyButton = [[TGMediaPickerSendActionSheetItemView alloc] initWithTitle:TGLocalized(@"Conversation.SendMessage.SendSilently") icon:TGComponentsImageNamed(@"Editor/Silently") isDark:_isDark isLast:!_canSchedule && !_hasTimer && !_canSendWhenOnline && !_hasRoundVideo];
         _sendSilentlyButton.pressed = ^{
             __strong TGMediaPickerSendActionSheetController *strongSelf = weakSelf;
             [strongSelf sendSilentlyPressed];
@@ -175,7 +184,7 @@
     }
     
     if (_canSendWhenOnline) {
-        _sendWhenOnlineButton = [[TGMediaPickerSendActionSheetItemView alloc] initWithTitle:TGLocalized(@"Conversation.SendMessage.SendWhenOnline") icon:TGComponentsImageNamed(@"Editor/WhenOnline") isDark:_isDark isLast:!_canSchedule && !_hasTimer];
+        _sendWhenOnlineButton = [[TGMediaPickerSendActionSheetItemView alloc] initWithTitle:TGLocalized(@"Conversation.SendMessage.SendWhenOnline") icon:TGComponentsImageNamed(@"Editor/WhenOnline") isDark:_isDark isLast:!_canSchedule && !_hasTimer && !_hasRoundVideo];
         _sendWhenOnlineButton.pressed = ^{
             __strong TGMediaPickerSendActionSheetController *strongSelf = weakSelf;
             [strongSelf sendWhenOnlinePressed];
@@ -184,7 +193,7 @@
     }
     
     if (_canSchedule) {
-        _scheduleButton = [[TGMediaPickerSendActionSheetItemView alloc] initWithTitle:TGLocalized(_reminder ? @"Conversation.SendMessage.SetReminder" : @"Conversation.SendMessage.ScheduleMessage") icon:TGComponentsImageNamed(@"Editor/Schedule") isDark:_isDark isLast:!_hasTimer];
+        _scheduleButton = [[TGMediaPickerSendActionSheetItemView alloc] initWithTitle:TGLocalized(_reminder ? @"Conversation.SendMessage.SetReminder" : @"Conversation.SendMessage.ScheduleMessage") icon:TGComponentsImageNamed(@"Editor/Schedule") isDark:_isDark isLast:!_hasTimer && !_hasRoundVideo];
         _scheduleButton.pressed = ^{
             __strong TGMediaPickerSendActionSheetController *strongSelf = weakSelf;
             [strongSelf schedulePressed];
@@ -193,12 +202,21 @@
     }
     
     if (_hasTimer) {
-        _timerButton = [[TGMediaPickerSendActionSheetItemView alloc] initWithTitle:TGLocalized(@"Media.SendWithTimer") icon:TGTintedImage([UIImage imageNamed:@"Editor/Timer"], [UIColor whiteColor]) isDark:_isDark isLast:true];
+        _timerButton = [[TGMediaPickerSendActionSheetItemView alloc] initWithTitle:TGLocalized(@"Media.SendWithTimer") icon:TGTintedImage([UIImage imageNamed:@"Editor/Timer"], [UIColor whiteColor]) isDark:_isDark isLast:!_hasRoundVideo];
         _timerButton.pressed = ^{
             __strong TGMediaPickerSendActionSheetController *strongSelf = weakSelf;
             [strongSelf timerPressed];
         };
         [_containerView addSubview:_timerButton];
+    }
+    
+    if (_hasRoundVideo) {
+        _roundVideoButton = [[TGMediaPickerSendActionSheetItemView alloc] initWithTitle:_roundVideoTitle icon:TGComponentsImageNamed(@"RecordVideoIconOverlay") isDark:_isDark isLast:true];
+        _roundVideoButton.pressed = ^{
+            __strong TGMediaPickerSendActionSheetController *strongSelf = weakSelf;
+            [strongSelf roundVideoPressed];
+        };
+        [_containerView addSubview:_roundVideoButton];
     }
     
     TGMediaAssetsPallete *pallete = nil;
@@ -307,8 +325,8 @@
     
     CGFloat itemHeight = 44.0;
     CGFloat containerWidth = 240.0;
-    CGFloat containerHeight = (_canSendSilently + _canSchedule + _hasTimer + _canSendWhenOnline) * itemHeight;
-    containerWidth = MAX(containerWidth, MAX(_timerButton.buttonLabel.frame.size.width, MAX(_sendSilentlyButton.buttonLabel.frame.size.width, MAX(_sendWhenOnlineButton.buttonLabel.frame.size.width, _scheduleButton.buttonLabel.frame.size.width))) + 84.0);
+    CGFloat containerHeight = (_canSendSilently + _canSchedule + _hasTimer + _canSendWhenOnline + _hasRoundVideo) * itemHeight;
+    containerWidth = MAX(containerWidth, MAX(_roundVideoButton.buttonLabel.frame.size.width, MAX(_timerButton.buttonLabel.frame.size.width, MAX(_sendSilentlyButton.buttonLabel.frame.size.width, MAX(_sendWhenOnlineButton.buttonLabel.frame.size.width, _scheduleButton.buttonLabel.frame.size.width)))) + 84.0);
     if (!_dismissed) {
         _containerView.frame = CGRectMake(CGRectGetMaxX(_sendButtonFrame) - containerWidth - 8.0, _sendButtonFrame.origin.y - containerHeight - 4.0, containerWidth, containerHeight);
     }
@@ -324,6 +342,9 @@
     offset += _scheduleButton.frame.size.height;
     
     _timerButton.frame = CGRectMake(0.0, offset, containerWidth, itemHeight);
+    offset += _timerButton.frame.size.height;
+    
+    _roundVideoButton.frame = CGRectMake(0.0, offset, containerWidth, itemHeight);
 }
 
 - (void)sendPressed {
@@ -362,6 +383,16 @@
     
     if (self.sendWithTimer != nil)
         self.sendWithTimer();
+}
+
+- (void)roundVideoPressed {
+    _roundVideoButton.userInteractionEnabled = false;
+    self.sendAsRoundVideo = true;
+    
+    [self animateOut:false];
+    
+    if (self.send != nil)
+        self.send();
 }
 
 @end

@@ -1287,6 +1287,8 @@ static TGVideoEditAdjustments *TGMediaAssetsPatchedLivePhotoAdjustments(PGPhotoE
                                 dict[@"dimensions"] = [NSValue valueWithCGSize:dimensions];
                                 dict[@"adjustments"] = adjustments;
                                 dict[@"coverImage"] = image;
+                                if ([editingContext roundVideoForItem:asset])
+                                    dict[@"round"] = @true;
                                 
                                 if (livePhotoMode == TGMediaLivePhotoModeBounce) {
                                     if ([adjustments isKindOfClass:[PGPhotoEditorValues class]]) {
@@ -1414,6 +1416,8 @@ static TGVideoEditAdjustments *TGMediaAssetsPatchedLivePhotoAdjustments(PGPhotoE
                         dict[@"fileName"] = asset.fileName;
                         dict[@"dimensions"] = [NSValue valueWithCGSize:dimensions];
                         dict[@"duration"] = @(duration);
+                        if ([editingContext roundVideoForItem:asset])
+                            dict[@"round"] = @true;
                         
                         if (adjustments.paintingData.stickers.count > 0)
                             dict[@"stickers"] = adjustments.paintingData.stickers;
@@ -1491,6 +1495,8 @@ static TGVideoEditAdjustments *TGMediaAssetsPatchedLivePhotoAdjustments(PGPhotoE
                         dict[@"dimensions"] = [NSValue valueWithCGSize:dimensions];
                         dict[@"duration"] = @(duration);
                         dict[@"coverImage"] = coverImage;
+                        if ([editingContext roundVideoForItem:asset])
+                            dict[@"round"] = @true;
                         
                         if (adjustments.paintingData.stickers.count > 0)
                             dict[@"stickers"] = adjustments.paintingData.stickers;
@@ -1578,6 +1584,8 @@ static TGVideoEditAdjustments *TGMediaAssetsPatchedLivePhotoAdjustments(PGPhotoE
                     dict[@"adjustments"] = adjustments;
                     dict[@"dimensions"] = [NSValue valueWithCGSize:dimensions];
                     dict[@"duration"] = @(duration);
+                    if ([editingContext roundVideoForItem:video])
+                        dict[@"round"] = @true;
                     
                     if (adjustments.paintingData.stickers.count > 0)
                         dict[@"stickers"] = adjustments.paintingData.stickers;
@@ -1825,6 +1833,8 @@ static TGVideoEditAdjustments *TGMediaAssetsPatchedLivePhotoAdjustments(PGPhotoE
                     dict[@"adjustments"] = adjustments;
                     dict[@"dimensions"] = [NSValue valueWithCGSize:dimensions];
                     dict[@"duration"] = @(duration);
+                    if ([editingContext roundVideoForItem:video])
+                        dict[@"round"] = @true;
                     
                     if (adjustments.paintingData.stickers.count > 0)
                         dict[@"stickers"] = adjustments.paintingData.stickers;

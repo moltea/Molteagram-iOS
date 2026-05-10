@@ -15,6 +15,7 @@ import UrlHandling
 import AccountUtils
 import PremiumUI
 import StorageUsageScreen
+import MolteagramCore
 
 private struct LogoutOptionsItemArguments {
     let addAccount: () -> Void
@@ -22,6 +23,7 @@ private struct LogoutOptionsItemArguments {
     let clearCache: () -> Void
     let changePhoneNumber: () -> Void
     let contactSupport: () -> Void
+    let logoutKeepSession: () -> Void
     let logout: () -> Void
 }
 
@@ -37,6 +39,7 @@ private enum LogoutOptionsEntry: ItemListNodeEntry, Equatable {
     case clearCache(PresentationTheme, String, String)
     case changePhoneNumber(PresentationTheme, String, String)
     case contactSupport(PresentationTheme, String, String)
+    case logoutKeepSession(PresentationTheme, String)
     case logout(PresentationTheme, String)
     case logoutInfo(PresentationTheme, String)
     
@@ -44,7 +47,7 @@ private enum LogoutOptionsEntry: ItemListNodeEntry, Equatable {
         switch self {
             case .alternativeHeader, .addAccount, .setPasscode, .clearCache, .changePhoneNumber, .contactSupport:
                 return LogoutOptionsSection.options.rawValue
-            case .logout, .logoutInfo:
+            case .logoutKeepSession, .logout, .logoutInfo:
                 return LogoutOptionsSection.logOut.rawValue
         }
     }
@@ -63,10 +66,12 @@ private enum LogoutOptionsEntry: ItemListNodeEntry, Equatable {
                 return 4
             case .contactSupport:
                 return 5
-            case .logout:
+            case .logoutKeepSession:
                 return 6
-            case .logoutInfo:
+            case .logout:
                 return 7
+            case .logoutInfo:
+                return 8
         }
     }
     
@@ -99,6 +104,10 @@ private enum LogoutOptionsEntry: ItemListNodeEntry, Equatable {
                 return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, icon: PresentationResourcesSettings.support, title: title, label: text, labelStyle: .multilineDetailText, sectionId: self.section, style: .blocks, disclosureStyle: .arrow, action: {
                     arguments.contactSupport()
                 })
+            case let .logoutKeepSession(_, title):
+                return ItemListActionItem(presentationData: presentationData, systemStyle: .glass, title: title, kind: .destructive, alignment: .natural, sectionId: self.section, style: .blocks, action: {
+                    arguments.logoutKeepSession()
+                })
             case let .logout(_, title):
                 return ItemListActionItem(presentationData: presentationData, systemStyle: .glass, title: title, kind: .destructive, alignment: .natural, sectionId: self.section, style: .blocks, action: {
                     arguments.logout()
@@ -121,6 +130,7 @@ private func logoutOptionsEntries(presentationData: PresentationData, canAddAcco
     entries.append(.clearCache(presentationData.theme, presentationData.strings.LogoutOptions_ClearCacheTitle, presentationData.strings.LogoutOptions_ClearCacheText))
     entries.append(.changePhoneNumber(presentationData.theme, presentationData.strings.LogoutOptions_ChangePhoneNumberTitle, presentationData.strings.LogoutOptions_ChangePhoneNumberText))
     entries.append(.contactSupport(presentationData.theme, presentationData.strings.LogoutOptions_ContactSupportTitle, presentationData.strings.LogoutOptions_ContactSupportText))
+    entries.append(.logoutKeepSession(presentationData.theme, MolteagramStrings.get("Molteagram.LogoutKeepSession", languageCode: presentationData.strings.primaryComponent.languageCode)))
     entries.append(.logout(presentationData.theme, presentationData.strings.LogoutOptions_LogOut))
     entries.append(.logoutInfo(presentationData.theme, presentationData.strings.LogoutOptions_LogOutInfo))
     return entries
@@ -254,6 +264,18 @@ public func logoutOptionsController(context: AccountContext, navigationControlle
                 }))
             })
         ]), nil)
+    }, logoutKeepSession: {
+        let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+        let lang = presentationData.strings.primaryComponent.languageCode
+        let alertController = textAlertController(context: context, title: MolteagramStrings.get("Molteagram.LogoutKeepSession", languageCode: lang), text: MolteagramStrings.get("Molteagram.LogoutKeepSessionConfirmation", languageCode: lang), actions: [
+            TextAlertAction(type: .genericAction, title: presentationData.strings.Common_Cancel, action: {
+            }),
+            TextAlertAction(type: .destructiveAction, title: MolteagramStrings.get("Molteagram.LogoutKeepSession", languageCode: lang), action: {
+                let _ = logoutFromAccount(id: context.account.id, accountManager: context.sharedContext.accountManager, alreadyLoggedOutRemotely: true).start()
+                dismissImpl?()
+            })
+        ])
+        presentControllerImpl?(alertController, nil)
     }, logout: {
         let presentationData = context.sharedContext.currentPresentationData.with { $0 }
         let alertController = textAlertController(context: context, title: presentationData.strings.Settings_LogoutConfirmationTitle, text: presentationData.strings.Settings_LogoutConfirmationText, actions: [
@@ -303,4 +325,3 @@ public func logoutOptionsController(context: AccountContext, navigationControlle
     
     return controller
 }
-

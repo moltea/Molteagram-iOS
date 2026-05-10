@@ -2,6 +2,7 @@ import Foundation
 import UIKit
 import Display
 import AsyncDisplayKit
+import Postbox
 import SwiftSignalKit
 import TelegramCore
 import TelegramPresentationData
@@ -13,6 +14,156 @@ import PhoneNumberFormat
 import DebugSettingsUI
 import MessageUI
 import AuthenticationServices
+import UniformTypeIdentifiers
+import ZipArchive
+import MolteagramCore
+
+private struct MolteagramPhoneAccountArchiveManifest: Codable {
+    let version: Int32
+    let accounts: [MolteagramPhoneAccountArchiveRecord]
+}
+
+private struct MolteagramPhoneAccountArchiveRecord: Codable {
+    let recordId: Int64
+    let userId: Int64
+    let title: String
+    let folderName: String
+    let record: AccountRecord<TelegramAccountRecordAttribute>
+}
+
+private struct MolteagramPhoneSelectableAccount: Equatable {
+    let recordId: AccountRecordId
+    let userId: Int64
+    let title: String
+    let status: String
+    let folderName: String
+    let record: AccountRecord<TelegramAccountRecordAttribute>
+    let enabled: Bool
+}
+
+private final class MolteagramPhoneAccountImportCoordinator: NSObject, UIDocumentPickerDelegate {
+    private weak var controller: AuthorizationSequencePhoneEntryController?
+    
+    init(controller: AuthorizationSequencePhoneEntryController) {
+        self.controller = controller
+    }
+    
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard let url = urls.first else {
+            return
+        }
+        self.controller?.prepareMolteagramAccountsImport(url: url)
+    }
+}
+
+private final class MolteagramPhoneAccountImportSelectionController: UITableViewController {
+    private let accounts: [MolteagramPhoneSelectableAccount]
+    private let languageCode: String
+    private var selectedIds: Set<Int64>
+    private let importAction: (Set<Int64>) -> Void
+    
+    init(accounts: [MolteagramPhoneSelectableAccount], languageCode: String, importAction: @escaping (Set<Int64>) -> Void) {
+        self.accounts = accounts
+        self.languageCode = languageCode
+        self.selectedIds = Set(accounts.filter(\.enabled).map { $0.recordId.int64 })
+        self.importAction = importAction
+        super.init(style: .insetGrouped)
+        self.title = MolteagramStrings.get("Molteagram.AccountsImportButton", languageCode: languageCode)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        self.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(self.cancelPressed))
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: MolteagramStrings.get("Molteagram.AccountsImportAction", languageCode: self.languageCode), style: .done, target: self, action: #selector(self.importPressed))
+        self.updateImportButton()
+    }
+    
+    private var enabledIds: Set<Int64> {
+        return Set(self.accounts.filter(\.enabled).map { $0.recordId.int64 })
+    }
+    
+    private var allEnabledSelected: Bool {
+        let enabledIds = self.enabledIds
+        return !enabledIds.isEmpty && enabledIds.isSubset(of: self.selectedIds)
+    }
+    
+    override func numberOfSections(in tableView: UITableView) -> Int {
+        return 2
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if section == 0 {
+            return 1
+        }
+        return self.accounts.count
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+        if indexPath.section == 0 {
+            cell.textLabel?.text = self.allEnabledSelected ? MolteagramStrings.get("Molteagram.AccountsDeselectAll", languageCode: self.languageCode) : MolteagramStrings.get("Molteagram.AccountsSelectAll", languageCode: self.languageCode)
+            cell.textLabel?.textColor = self.view.tintColor
+            cell.selectionStyle = self.enabledIds.isEmpty ? .none : .default
+            return cell
+        }
+        let account = self.accounts[indexPath.row]
+        cell.textLabel?.text = account.title
+        cell.detailTextLabel?.text = account.status
+        cell.selectionStyle = account.enabled ? .default : .none
+        cell.textLabel?.isEnabled = account.enabled
+        cell.detailTextLabel?.isEnabled = account.enabled
+        cell.accessoryType = self.selectedIds.contains(account.recordId.int64) ? .checkmark : .none
+        return cell
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        if indexPath.section == 0 {
+            let enabledIds = self.enabledIds
+            guard !enabledIds.isEmpty else {
+                return
+            }
+            if self.allEnabledSelected {
+                self.selectedIds.subtract(enabledIds)
+            } else {
+                self.selectedIds.formUnion(enabledIds)
+            }
+            tableView.reloadData()
+            self.updateImportButton()
+            return
+        }
+        let account = self.accounts[indexPath.row]
+        guard account.enabled else {
+            return
+        }
+        if self.selectedIds.contains(account.recordId.int64) {
+            self.selectedIds.remove(account.recordId.int64)
+        } else {
+            self.selectedIds.insert(account.recordId.int64)
+        }
+        tableView.reloadRows(at: [indexPath], with: .automatic)
+        self.updateImportButton()
+    }
+    
+    private func updateImportButton() {
+        self.navigationItem.rightBarButtonItem?.isEnabled = !self.selectedIds.isEmpty
+    }
+    
+    @objc private func cancelPressed() {
+        self.dismiss(animated: true)
+    }
+    
+    @objc private func importPressed() {
+        let selectedIds = self.selectedIds
+        self.dismiss(animated: true) {
+            self.importAction(selectedIds)
+        }
+    }
+}
 
 public final class AuthorizationSequencePhoneEntryController: ViewController, MFMailComposeViewControllerDelegate, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
     private var controllerNode: AuthorizationSequencePhoneEntryControllerNode {
@@ -63,6 +214,7 @@ public final class AuthorizationSequencePhoneEntryController: ViewController, MF
     private let termsDisposable = MetaDisposable()
     
     private let hapticFeedback = HapticFeedback()
+    private var importCoordinator: MolteagramPhoneAccountImportCoordinator?
     
     public init(sharedContext: SharedAccountContext, account: UnauthorizedAccount?, countriesConfiguration: CountriesConfiguration? = nil, apiId: Int32, apiHash: String, isTestingEnvironment: Bool, otherAccountPhoneNumbers: ((String, AccountRecordId, Bool)?, [(String, AccountRecordId, Bool)]), network: Network, presentationData: PresentationData, openUrl: @escaping (String) -> Void, back: @escaping () -> Void) {
         self.sharedContext = sharedContext
@@ -133,6 +285,7 @@ public final class AuthorizationSequencePhoneEntryController: ViewController, MF
     
     private var shouldAnimateIn = false
     private var transitionInArguments: (buttonFrame: CGRect, buttonTitle: String, animationSnapshot: UIView, textSnapshot: UIView)?
+    private var didStartTransitionIn = false
     
     func animateWithSplashController(_ controller: AuthorizationSequenceSplashController) {
         self.shouldAnimateIn = true
@@ -150,6 +303,7 @@ public final class AuthorizationSequencePhoneEntryController: ViewController, MF
             strongSelf.view.endEditing(true)
             self?.present(debugController(sharedContext: strongSelf.sharedContext, context: nil, modal: true), in: .window(.root), with: ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
         }, hasOtherAccounts: self.otherAccountPhoneNumbers.0 != nil)
+        self.controllerNode.isImportAccountsHiddenForTransition = self.transitionInArguments != nil
         self.controllerNode.accountUpdated = { [weak self] account in
             guard let strongSelf = self else {
                 return
@@ -189,6 +343,9 @@ public final class AuthorizationSequencePhoneEntryController: ViewController, MF
         self.controllerNode.checkPhone = { [weak self] in
             self?.nextPressed()
         }
+        self.controllerNode.importAccounts = { [weak self] in
+            self?.openMolteagramAccountsImport()
+        }
         
         if let account = self.account {
             loadServerCountryCodes(accountManager: sharedContext.accountManager, engine: TelegramEngineUnauthorized(account: account), completion: { [weak self] in
@@ -201,6 +358,202 @@ public final class AuthorizationSequencePhoneEntryController: ViewController, MF
         }
         
         self.loadAndPresentPasskey(force: false)
+    }
+    
+    private func openMolteagramAccountsImport() {
+        let coordinator = MolteagramPhoneAccountImportCoordinator(controller: self)
+        self.importCoordinator = coordinator
+        var types: [UTType] = []
+        if let type = UTType(filenameExtension: "molaccs") {
+            types.append(type)
+        }
+        if types.isEmpty {
+            types = [.data]
+        }
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: types, asCopy: true)
+        picker.delegate = coordinator
+        picker.allowsMultipleSelection = false
+        self.present(picker, animated: true)
+    }
+    
+    fileprivate func prepareMolteagramAccountsImport(url: URL) {
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer {
+            if accessed {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+        let localUrl = URL(fileURLWithPath: NSTemporaryDirectory() + "molaccs_phone_selected_" + UUID().uuidString + ".molaccs")
+        do {
+            try? FileManager.default.removeItem(at: localUrl)
+            try FileManager.default.copyItem(at: url, to: localUrl)
+        } catch {
+            self.presentMolteagramImportResult(imported: 0, skipped: 0, invalidArchive: true)
+            return
+        }
+        let accounts = self.inspectMolteagramAccountsArchive(url: localUrl)
+        guard !accounts.isEmpty else {
+            self.presentMolteagramImportResult(imported: 0, skipped: 0, invalidArchive: true)
+            return
+        }
+        let lang = self.presentationData.strings.primaryComponent.languageCode
+        let controller = MolteagramPhoneAccountImportSelectionController(accounts: accounts, languageCode: lang, importAction: { [weak self] selectedIds in
+            guard let self else {
+                return
+            }
+            let result = self.performMolteagramAccountsImport(url: localUrl, selectedRecordIds: selectedIds)
+            self.presentMolteagramImportResult(imported: result.imported, skipped: result.skipped, invalidArchive: result.invalidArchive)
+        })
+        let navigationController = UINavigationController(rootViewController: controller)
+        self.present(navigationController, animated: true)
+    }
+    
+    private func presentMolteagramImportResult(imported: Int, skipped: Int, invalidArchive: Bool) {
+        let message: String
+        let lang = self.presentationData.strings.primaryComponent.languageCode
+        if invalidArchive {
+            message = MolteagramStrings.get("Molteagram.AccountsImportInvalidArchive", languageCode: lang)
+        } else {
+            message = String(format: MolteagramStrings.get("Molteagram.AccountsImportResult", languageCode: lang), imported, skipped)
+        }
+        let alertController = UIAlertController(title: MolteagramStrings.get("Molteagram.Accounts", languageCode: lang), message: message, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: self.presentationData.strings.Common_OK, style: .default, handler: nil))
+        self.present(alertController, animated: true)
+    }
+    
+    private func inspectMolteagramAccountsArchive(url: URL) -> [MolteagramPhoneSelectableAccount] {
+        let importRoot = NSTemporaryDirectory() + "molaccs_phone_inspect_" + UUID().uuidString
+        let fileManager = FileManager.default
+        try? fileManager.removeItem(atPath: importRoot)
+        try? fileManager.createDirectory(atPath: importRoot, withIntermediateDirectories: true)
+        defer {
+            try? fileManager.removeItem(atPath: importRoot)
+        }
+        
+        guard SSZipArchive.unzipFile(atPath: url.path, toDestination: importRoot), let manifestData = try? Data(contentsOf: URL(fileURLWithPath: importRoot + "/manifest.json")), let manifest = try? JSONDecoder().decode(MolteagramPhoneAccountArchiveManifest.self, from: manifestData), manifest.version == 1, !manifest.accounts.isEmpty else {
+            return []
+        }
+        
+        let existingRecordIdsSignal = self.sharedContext.accountManager.transaction { transaction -> Set<AccountRecordId> in
+            return Set(transaction.getRecords().map(\.id))
+        }
+        var existingRecordIds = Set<AccountRecordId>()
+        let recordsSemaphore = DispatchSemaphore(value: 0)
+        let _ = (existingRecordIdsSignal |> take(1)).startStandalone(next: { ids in
+            existingRecordIds = ids
+            recordsSemaphore.signal()
+        })
+        recordsSemaphore.wait()
+        
+        var existingUserIds = Set<Int64>()
+        let accountsSemaphore = DispatchSemaphore(value: 0)
+        let _ = (self.sharedContext.activeAccountContexts |> take(1)).startStandalone(next: { value in
+            let (_, activeAccounts, _) = value
+            existingUserIds = Set(activeAccounts.map { $0.1.account.peerId.toInt64() })
+            accountsSemaphore.signal()
+        })
+        accountsSemaphore.wait()
+        
+        let lang = self.presentationData.strings.primaryComponent.languageCode
+        return manifest.accounts.map { item in
+            let recordId = item.record.id
+            let expectedFolderName = accountRecordIdPathName(recordId)
+            let sourcePath = importRoot + "/accounts/" + item.folderName
+            let structurallyValid = item.recordId == recordId.int64 && item.userId != 0 && item.folderName == expectedFolderName && !item.folderName.contains("/") && fileManager.fileExists(atPath: sourcePath + "/postbox")
+            let duplicate = existingRecordIds.contains(recordId) || existingUserIds.contains(item.userId)
+            let enabled = structurallyValid && !duplicate
+            let userIdPrefix = MolteagramStrings.get("Molteagram.AccountsUserIdPrefix", languageCode: lang)
+            let status: String
+            if duplicate {
+                status = "\(userIdPrefix) \(item.userId) • \(MolteagramStrings.get("Molteagram.AccountsDuplicate", languageCode: lang))"
+            } else if !structurallyValid {
+                status = "\(userIdPrefix) \(item.userId) • \(MolteagramStrings.get("Molteagram.AccountsInvalid", languageCode: lang))"
+            } else {
+                status = "\(userIdPrefix) \(item.userId)"
+            }
+            return MolteagramPhoneSelectableAccount(recordId: recordId, userId: item.userId, title: item.title, status: status, folderName: item.folderName, record: item.record, enabled: enabled)
+        }
+    }
+    
+    private func performMolteagramAccountsImport(url: URL, selectedRecordIds: Set<Int64>) -> (imported: Int, skipped: Int, invalidArchive: Bool, firstImportedId: AccountRecordId?) {
+        let rootPath = self.sharedContext.basePath
+        let importRoot = NSTemporaryDirectory() + "molaccs_phone_import_" + UUID().uuidString
+        let fileManager = FileManager.default
+        try? fileManager.removeItem(atPath: importRoot)
+        try? fileManager.createDirectory(atPath: importRoot, withIntermediateDirectories: true)
+        defer {
+            try? fileManager.removeItem(atPath: importRoot)
+        }
+        
+        guard SSZipArchive.unzipFile(atPath: url.path, toDestination: importRoot), let manifestData = try? Data(contentsOf: URL(fileURLWithPath: importRoot + "/manifest.json")), let manifest = try? JSONDecoder().decode(MolteagramPhoneAccountArchiveManifest.self, from: manifestData), manifest.version == 1, !manifest.accounts.isEmpty else {
+            return (0, 0, true, nil)
+        }
+        
+        let existingRecordIdsSignal = self.sharedContext.accountManager.transaction { transaction -> Set<AccountRecordId> in
+            return Set(transaction.getRecords().map(\.id))
+        }
+        var existingRecordIds = Set<AccountRecordId>()
+        let recordsSemaphore = DispatchSemaphore(value: 0)
+        let _ = (existingRecordIdsSignal |> take(1)).startStandalone(next: { ids in
+            existingRecordIds = ids
+            recordsSemaphore.signal()
+        })
+        recordsSemaphore.wait()
+        
+        var existingUserIds = Set<Int64>()
+        let accountsSemaphore = DispatchSemaphore(value: 0)
+        let _ = (self.sharedContext.activeAccountContexts |> take(1)).startStandalone(next: { value in
+            let (_, activeAccounts, _) = value
+            existingUserIds = Set(activeAccounts.map { $0.1.account.peerId.toInt64() })
+            accountsSemaphore.signal()
+        })
+        accountsSemaphore.wait()
+        
+        var importedUserIds = Set<Int64>()
+        var importedRecords: [(AccountRecordId, AccountRecord<TelegramAccountRecordAttribute>)] = []
+        var imported = 0
+        var skipped = 0
+        var firstImportedId: AccountRecordId?
+        for item in manifest.accounts {
+            let recordId = item.record.id
+            guard selectedRecordIds.contains(recordId.int64) else {
+                continue
+            }
+            let expectedFolderName = accountRecordIdPathName(recordId)
+            let sourcePath = importRoot + "/accounts/" + item.folderName
+            let destinationPath = rootPath + "/" + expectedFolderName
+            let structurallyValid = item.recordId == recordId.int64 && item.userId != 0 && item.folderName == expectedFolderName && !item.folderName.contains("/") && fileManager.fileExists(atPath: sourcePath + "/postbox")
+            guard structurallyValid, !existingRecordIds.contains(recordId), !existingUserIds.contains(item.userId), !importedUserIds.contains(item.userId), !fileManager.fileExists(atPath: destinationPath) else {
+                skipped += 1
+                continue
+            }
+            do {
+                try fileManager.copyItem(atPath: sourcePath, toPath: destinationPath)
+                existingRecordIds.insert(recordId)
+                importedUserIds.insert(item.userId)
+                importedRecords.append((recordId, item.record))
+                if firstImportedId == nil {
+                    firstImportedId = recordId
+                }
+                imported += 1
+            } catch {
+                skipped += 1
+            }
+        }
+        
+        if let firstImportedId, !importedRecords.isEmpty {
+            let _ = (self.sharedContext.accountManager.transaction { transaction -> Void in
+                for (recordId, record) in importedRecords {
+                    transaction.updateRecord(recordId, { _ in
+                        return record
+                    })
+                }
+                transaction.setCurrentId(firstImportedId)
+                transaction.removeAuth()
+            }).startStandalone()
+        }
+        
+        return (imported, skipped, false, firstImportedId)
     }
     
     private func loadAndPresentPasskey(force: Bool) {
@@ -324,6 +677,31 @@ public final class AuthorizationSequencePhoneEntryController: ViewController, MF
     }
     
     private var animatingIn = false
+    
+    private func startTransitionInIfNeeded() {
+        guard self.shouldAnimateIn, !self.didStartTransitionIn else {
+            return
+        }
+        guard let (buttonFrame, buttonTitle, animationSnapshot, textSnapshot) = self.transitionInArguments else {
+            self.shouldAnimateIn = false
+            self.animatingIn = false
+            self.controllerNode.activateInput()
+            return
+        }
+        
+        self.shouldAnimateIn = false
+        self.didStartTransitionIn = true
+        self.controllerNode.animateIn(buttonFrame: buttonFrame, buttonTitle: buttonTitle, animationSnapshot: animationSnapshot, textSnapshot: textSnapshot)
+        Queue.mainQueue().after(0.45) { [weak self] in
+            guard let self else {
+                return
+            }
+            self.animatingIn = false
+            self.controllerNode.completeTransitionIn()
+            self.controllerNode.activateInput()
+        }
+    }
+    
     override public func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
@@ -345,6 +723,10 @@ public final class AuthorizationSequencePhoneEntryController: ViewController, MF
         
         if !self.animatingIn {
             self.controllerNode.activateInput()
+        } else {
+            Queue.mainQueue().after(0.25) { [weak self] in
+                self?.startTransitionInIfNeeded()
+            }
         }
     }
     
@@ -369,10 +751,7 @@ public final class AuthorizationSequencePhoneEntryController: ViewController, MF
         self.controllerNode.containerLayoutUpdated(layout, navigationBarHeight: self.navigationLayout(layout: layout).navigationFrame.maxY, transition: transition)
         
         if self.shouldAnimateIn, let inputHeight = layout.inputHeight, inputHeight > 0.0 {
-            if let (buttonFrame, buttonTitle, animationSnapshot, textSnapshot) = self.transitionInArguments {
-                self.shouldAnimateIn = false
-                self.controllerNode.animateIn(buttonFrame: buttonFrame, buttonTitle: buttonTitle, animationSnapshot: animationSnapshot, textSnapshot: textSnapshot)
-            }
+            self.startTransitionInIfNeeded()
         }
     }
     

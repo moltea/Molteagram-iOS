@@ -26,6 +26,7 @@ private final class MolteagramSettingsArguments {
         
     let openStatusesSettings: () -> Void
     let openFontsSettings: () -> Void
+    let openAccountsSettings: () -> Void
     
     let updateSaveDeletedMessages: (Bool) -> Void
     let updateSaveEditedMessages: (Bool) -> Void
@@ -44,7 +45,7 @@ private final class MolteagramSettingsArguments {
     
     let updateForceAllowCopy: (Bool) -> Void
     
-    init(context: AccountContext, presentController: @escaping (ViewController, ViewControllerPresentationArguments?) -> Void, pushController: @escaping(ViewController)->Void, openStatusesSettings: @escaping () -> Void, openFontsSettings: @escaping () -> Void, updateSaveDeletedMessages: @escaping (Bool) -> Void, updateSaveEditedMessages: @escaping (Bool) -> Void, updateSaveSecretImages: @escaping (Bool) -> Void, updateDisableMarkingAsConsumed: @escaping (Bool) -> Void, updateAllowSecretScreenshots: @escaping (Bool) -> Void, updateAllowSecretDownload: @escaping (Bool) -> Void,
+    init(context: AccountContext, presentController: @escaping (ViewController, ViewControllerPresentationArguments?) -> Void, pushController: @escaping(ViewController)->Void, openStatusesSettings: @escaping () -> Void, openFontsSettings: @escaping () -> Void, openAccountsSettings: @escaping () -> Void, updateSaveDeletedMessages: @escaping (Bool) -> Void, updateSaveEditedMessages: @escaping (Bool) -> Void, updateSaveSecretImages: @escaping (Bool) -> Void, updateDisableMarkingAsConsumed: @escaping (Bool) -> Void, updateAllowSecretScreenshots: @escaping (Bool) -> Void, updateAllowSecretDownload: @escaping (Bool) -> Void,
          updateShowUserId: @escaping (Bool) -> Void, updateShowGroupsId: @escaping (Bool) -> Void, updateShowChannelsId: @escaping (Bool) -> Void, updateDisableAds: @escaping (Bool) -> Void, updateHideSimilarChannels: @escaping (Bool) -> Void, updateShowSecondsInMessages: @escaping (Bool) -> Void, updateForceAllowCopy: @escaping (Bool) -> Void) {
         self.context = context
         self.presentController = presentController
@@ -52,6 +53,7 @@ private final class MolteagramSettingsArguments {
         
         self.openStatusesSettings = openStatusesSettings
         self.openFontsSettings = openFontsSettings
+        self.openAccountsSettings = openAccountsSettings
         
         self.updateSaveDeletedMessages = updateSaveDeletedMessages
         self.updateSaveEditedMessages = updateSaveEditedMessages
@@ -83,6 +85,7 @@ private enum MolteagramSettingsSection: Int32 {
 public enum MolteagramSettingsEntryTag: ItemListItemTag {
     case statusesSettings
     case fontsSettings
+    case accountsSettings
     
     case saveDeletedMessages
     case saveEditedMessages
@@ -114,6 +117,7 @@ public enum MolteagramSettingsEntryTag: ItemListItemTag {
 private enum MolteagramSettingsEntry: ItemListNodeEntry {
     case statusesSettings(PresentationTheme, String, String, String)
     case fontsSettings(PresentationTheme, String, String, String)
+    case accountsSettings(PresentationTheme, String, String, String)
     
     case messagesHeader(PresentationTheme, String)
     case saveDeletedMessages(PresentationTheme, String, Bool)
@@ -138,7 +142,7 @@ private enum MolteagramSettingsEntry: ItemListNodeEntry {
     
     var section: ItemListSectionId {
         switch self {
-            case .statusesSettings, .fontsSettings:
+            case .statusesSettings, .fontsSettings, .accountsSettings:
                 return MolteagramSettingsSection.categories.rawValue
             case .messagesHeader, .saveDeletedMessages, .saveEditedMessages:
                 return MolteagramSettingsSection.messages.rawValue
@@ -157,40 +161,42 @@ private enum MolteagramSettingsEntry: ItemListNodeEntry {
                 return 0
             case .fontsSettings:
                 return 1
-            case .messagesHeader:
+            case .accountsSettings:
                 return 2
-            case .saveDeletedMessages:
+            case .messagesHeader:
                 return 3
-            case .saveEditedMessages:
+            case .saveDeletedMessages:
                 return 4
-            case .secretImagesHeader:
+            case .saveEditedMessages:
                 return 5
-            case .saveSecretImages:
+            case .secretImagesHeader:
                 return 6
-            case .disableMarkingAsConsumed:
+            case .saveSecretImages:
                 return 7
-            case .allowSecretScreenshots:
+            case .disableMarkingAsConsumed:
                 return 8
-            case .allowSecretDownload:
+            case .allowSecretScreenshots:
                 return 9
-            case .uiImprovementsHeader:
+            case .allowSecretDownload:
                 return 10
-            case .showUserId:
+            case .uiImprovementsHeader:
                 return 11
-            case .showGroupsId:
+            case .showUserId:
                 return 12
-            case .showChannelsId:
+            case .showGroupsId:
                 return 13
-            case .disableAds:
+            case .showChannelsId:
                 return 14
-            case .hideSimilarChannels:
+            case .disableAds:
                 return 15
-            case .showSecondsInMessages:
+            case .hideSimilarChannels:
                 return 16
-            case .miscHeader:
+            case .showSecondsInMessages:
                 return 17
-            case .forceAllowCopy:
+            case .miscHeader:
                 return 18
+            case .forceAllowCopy:
+                return 19
         }
     }
     
@@ -200,6 +206,8 @@ private enum MolteagramSettingsEntry: ItemListNodeEntry {
                 return MolteagramSettingsEntryTag.statusesSettings
             case .fontsSettings:
                 return MolteagramSettingsEntryTag.fontsSettings
+            case .accountsSettings:
+                return MolteagramSettingsEntryTag.accountsSettings
             
             case .saveDeletedMessages:
                 return MolteagramSettingsEntryTag.saveDeletedMessages
@@ -245,6 +253,12 @@ private enum MolteagramSettingsEntry: ItemListNodeEntry {
                 }
             case let .fontsSettings(lhsTheme, lhsTitle, lhsSubtitle, lhsLabel):
                 if case let .fontsSettings(rhsTheme, rhsTitle, rhsSubtitle, rhsLabel) = rhs, lhsTheme === rhsTheme, lhsTitle == rhsTitle, lhsSubtitle == rhsSubtitle, lhsLabel == rhsLabel {
+                    return true
+                } else {
+                    return false
+                }
+            case let .accountsSettings(lhsTheme, lhsTitle, lhsSubtitle, lhsLabel):
+                if case let .accountsSettings(rhsTheme, rhsTitle, rhsSubtitle, rhsLabel) = rhs, lhsTheme === rhsTheme, lhsTitle == rhsTitle, lhsSubtitle == rhsSubtitle, lhsLabel == rhsLabel {
                     return true
                 } else {
                     return false
@@ -369,6 +383,10 @@ private enum MolteagramSettingsEntry: ItemListNodeEntry {
                 return NotificationsCategoryItemListItem(presentationData: presentationData, systemStyle: .glass, icon: PresentationResourcesSettings.fonts, title: title, subtitle: subtitle, label: label, sectionId: self.section, style: .blocks, action: {
                     arguments.openFontsSettings()
                 })
+            case let .accountsSettings(_, title, subtitle, label):
+                return NotificationsCategoryItemListItem(presentationData: presentationData, systemStyle: .glass, icon: PresentationResourcesSettings.devices, title: title, subtitle: subtitle, label: label, sectionId: self.section, style: .blocks, action: {
+                    arguments.openAccountsSettings()
+                })
             case let .messagesHeader(_, text):
                 return ItemListSectionHeaderItem(presentationData: presentationData, text: text, sectionId: self.section)
             case let .saveDeletedMessages(_, text, value):
@@ -439,6 +457,7 @@ private func molteagramSettingsEntries(molteagramSettings: MolteagramSettings, p
     let lang = presentationData.strings.primaryComponent.languageCode
     entries.append(.statusesSettings(presentationData.theme, MolteagramStrings.get("Molteagram.StatusesTab", languageCode: lang), "", ""))
     entries.append(.fontsSettings(presentationData.theme, MolteagramStrings.get("Molteagram.Fonts", languageCode: lang), "", ""))
+    entries.append(.accountsSettings(presentationData.theme, MolteagramStrings.get("Molteagram.Accounts", languageCode: lang), "", ""))
     
     entries.append(.messagesHeader(presentationData.theme, MolteagramStrings.get("Molteagram.MessagesHeader", languageCode: lang)))
     entries.append(.saveDeletedMessages(presentationData.theme, MolteagramStrings.get("Molteagram.SaveDeletedMessages", languageCode: lang), molteagramSettings.saveDeletedMessages))
@@ -481,6 +500,8 @@ public func molteagramSettingsController(context: AccountContext, exceptionsList
         ))
     }, openFontsSettings: {
         pushControllerImpl?(molteagramFontsSettingsController(context: context))
+    }, openAccountsSettings: {
+        pushControllerImpl?(molteagramAccountsSettingsController(context: context))
     }, updateSaveDeletedMessages: { value in
         let _ = updateMolteagramSettingsInteractively(accountManager: context.sharedContext.accountManager, { settings in
             var settings = settings

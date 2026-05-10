@@ -15,6 +15,7 @@ import SolidRoundedButtonNode
 import AuthorizationUtils
 import ManagedAnimationNode
 import Markdown
+import MolteagramCore
 
 private final class PhoneAndCountryNode: ASDisplayNode {
     let strings: PresentationStrings
@@ -319,6 +320,7 @@ final class AuthorizationSequencePhoneEntryControllerNode: ASDisplayNode {
     private let phoneAndCountryNode: PhoneAndCountryNode
     private let contactSyncNode: ContactSyncNode
     private let proceedNode: SolidRoundedButtonNode
+    private let importAccountsNode: ASButtonNode
     
     private var qrNode: ASImageNode?
     private let exportTokenDisposable = MetaDisposable()
@@ -357,6 +359,15 @@ final class AuthorizationSequencePhoneEntryControllerNode: ASDisplayNode {
     
     var selectCountryCode: (() -> Void)?
     var checkPhone: (() -> Void)?
+    var importAccounts: (() -> Void)?
+    var isImportAccountsHiddenForTransition: Bool = false {
+        didSet {
+            if self.isImportAccountsHiddenForTransition != oldValue {
+                self.importAccountsNode.isHidden = self.isImportAccountsHiddenForTransition
+                self.importAccountsNode.alpha = self.isImportAccountsHiddenForTransition ? 0.0 : 1.0
+            }
+        }
+    }
     
     var inProgress: Bool = false {
         didSet {
@@ -428,6 +439,13 @@ final class AuthorizationSequencePhoneEntryControllerNode: ASDisplayNode {
         self.proceedNode.progressType = .embedded
         self.proceedNode.isEnabled = false
         self.proceedNode.accessibilityIdentifier = "Auth.PhoneEntry.ContinueButton"
+        
+        self.importAccountsNode = ASButtonNode()
+        self.importAccountsNode.displaysAsynchronously = false
+        let importAccountsTitle = MolteagramStrings.get("Molteagram.AccountsImportButton", languageCode: strings.primaryComponent.languageCode)
+        self.importAccountsNode.setAttributedTitle(NSAttributedString(string: importAccountsTitle, font: Font.regular(17.0), textColor: theme.list.itemAccentColor), for: .normal)
+        self.importAccountsNode.accessibilityLabel = importAccountsTitle
+        self.importAccountsNode.accessibilityTraits = .button
 
         super.init()
         
@@ -444,6 +462,7 @@ final class AuthorizationSequencePhoneEntryControllerNode: ASDisplayNode {
         self.addSubnode(self.phoneAndCountryNode)
         self.addSubnode(self.contactSyncNode)
         self.addSubnode(self.proceedNode)
+        self.addSubnode(self.importAccountsNode)
         self.addSubnode(self.animationNode)
         self.addSubnode(self.managedAnimationNode)
         self.contactSyncNode.isHidden = true
@@ -490,6 +509,7 @@ final class AuthorizationSequencePhoneEntryControllerNode: ASDisplayNode {
         self.proceedNode.pressed = { [weak self] in
             self?.checkPhone?()
         }
+        self.importAccountsNode.addTarget(self, action: #selector(self.importAccountsPressed), forControlEvents: .touchUpInside)
         
         self.animationNode.completed = { [weak self] _ in
             self?.animationNode.removeFromSupernode()
@@ -526,6 +546,7 @@ final class AuthorizationSequencePhoneEntryControllerNode: ASDisplayNode {
         
         self.textSnapshotView = textSnapshot
         self.view.insertSubview(textSnapshot, at: 0)
+        self.isImportAccountsHiddenForTransition = true
         
         let nodes: [ASDisplayNode] = [
             self.animationNode,
@@ -570,6 +591,29 @@ final class AuthorizationSequencePhoneEntryControllerNode: ASDisplayNode {
             node.alpha = 1.0
             node.layer.animateAlpha(from: 0.0, to: 1.0, duration: 0.3)
         }
+        self.isImportAccountsHiddenForTransition = false
+        self.importAccountsNode.layer.animateAlpha(from: 0.0, to: 1.0, duration: 0.3)
+    }
+    
+    func completeTransitionIn() {
+        self.animationSnapshotView?.removeFromSuperview()
+        self.animationSnapshotView = nil
+        self.textSnapshotView?.removeFromSuperview()
+        self.textSnapshotView = nil
+        
+        let nodes: [ASDisplayNode] = [
+            self.animationNode,
+            self.titleNode,
+            self.noticeNode,
+            self.phoneAndCountryNode,
+            self.contactSyncNode
+        ]
+        for node in nodes {
+            node.alpha = 1.0
+        }
+        self.proceedNode.title = self.strings.Login_Continue
+        self.proceedNode.isEnabled = false
+        self.isImportAccountsHiddenForTransition = false
     }
     
     func updateCountryCode() {
@@ -629,6 +673,14 @@ final class AuthorizationSequencePhoneEntryControllerNode: ASDisplayNode {
             AuthorizationLayoutItem(node: self.phoneAndCountryNode, size: CGSize(width: maximumWidth, height: 115.0), spacingBefore: AuthorizationLayoutItemSpacing(weight: 30.0, maxValue: 30.0), spacingAfter: AuthorizationLayoutItemSpacing(weight: 0.0, maxValue: 0.0)),
         ]
         
+        if self.account != nil && layout.size.width > 320.0 {
+            self.importAccountsNode.isHidden = self.isImportAccountsHiddenForTransition
+            self.importAccountsNode.alpha = self.isImportAccountsHiddenForTransition ? 0.0 : 1.0
+            items.append(AuthorizationLayoutItem(node: self.importAccountsNode, size: CGSize(width: maximumWidth - inset * 2.0, height: 44.0), spacingBefore: AuthorizationLayoutItemSpacing(weight: 8.0, maxValue: 8.0), spacingAfter: AuthorizationLayoutItemSpacing(weight: 0.0, maxValue: 0.0)))
+        } else {
+            self.importAccountsNode.isHidden = true
+        }
+        
         if layout.size.width > 320.0 {
             items.insert(AuthorizationLayoutItem(node: self.animationNode, size: animationSize, spacingBefore: AuthorizationLayoutItemSpacing(weight: 10.0, maxValue: 10.0), spacingAfter: AuthorizationLayoutItemSpacing(weight: 0.0, maxValue: 0.0)), at: 0)
             self.proceedNode.isHidden = false
@@ -667,6 +719,10 @@ final class AuthorizationSequencePhoneEntryControllerNode: ASDisplayNode {
         self.titleActivateAreaNode.frame = self.titleNode.frame
         self.noticeActivateAreaNode.accessibilityLabel = self.noticeNode.attributedText?.string ?? ""
         self.noticeActivateAreaNode.frame = self.noticeNode.frame
+    }
+    
+    @objc private func importAccountsPressed() {
+        self.importAccounts?()
     }
     
     func activateInput() {

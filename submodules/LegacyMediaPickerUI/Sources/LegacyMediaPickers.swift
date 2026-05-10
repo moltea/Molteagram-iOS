@@ -133,7 +133,7 @@ private enum LegacyAssetVideoData {
 private enum LegacyAssetItem {
     case image(data: LegacyAssetImageData, thumbnail: UIImage?, caption: NSAttributedString?, stickers: [FileMediaReference], video: LegacyAssetVideoData?, adjustments: TGVideoEditAdjustments?)
     case file(data: LegacyAssetImageData, thumbnail: UIImage?, mimeType: String, name: String, caption: NSAttributedString?)
-    case video(data: LegacyAssetVideoData, thumbnail: UIImage?, cover: UIImage?, adjustments: TGVideoEditAdjustments?, caption: NSAttributedString?, asFile: Bool, asAnimation: Bool, stickers: [FileMediaReference])
+    case video(data: LegacyAssetVideoData, thumbnail: UIImage?, cover: UIImage?, adjustments: TGVideoEditAdjustments?, caption: NSAttributedString?, asFile: Bool, asAnimation: Bool, isRound: Bool, stickers: [FileMediaReference])
 }
 
 private final class LegacyAssetItemWrapper: NSObject {
@@ -183,7 +183,7 @@ public func legacyAssetPickerItemGenerator() -> ((Any?, NSAttributedString?, Str
                 let url: String? = (dict["url"] as? String) ?? (dict["url"] as? URL)?.path
                 if let url = url {
                     let dimensions = image.size
-                    result["item" as NSString] = LegacyAssetItemWrapper(item: .video(data: .tempFile(path: url, dimensions: dimensions, duration: 4.0), thumbnail: thumbnail, cover: cover, adjustments: dict["adjustments"] as? TGVideoEditAdjustments, caption: caption, asFile: false, asAnimation: true, stickers: stickers), timer: (dict["timer"] as? NSNumber)?.intValue, spoiler: (dict["spoiler"] as? NSNumber)?.boolValue, price: price, groupedId: (dict["groupedId"] as? NSNumber)?.int64Value, uniqueId: uniqueId)
+                    result["item" as NSString] = LegacyAssetItemWrapper(item: .video(data: .tempFile(path: url, dimensions: dimensions, duration: 4.0), thumbnail: thumbnail, cover: cover, adjustments: dict["adjustments"] as? TGVideoEditAdjustments, caption: caption, asFile: false, asAnimation: true, isRound: (dict["round"] as? NSNumber)?.boolValue ?? false, stickers: stickers), timer: (dict["timer"] as? NSNumber)?.intValue, spoiler: (dict["spoiler"] as? NSNumber)?.boolValue, price: price, groupedId: (dict["groupedId"] as? NSNumber)?.int64Value, uniqueId: uniqueId)
                 }
             } else {
                 result["item" as NSString] = LegacyAssetItemWrapper(item: .image(data: .image(image), thumbnail: thumbnail, caption: caption, stickers: stickers, video: nil, adjustments: nil), timer: (dict["timer"] as? NSNumber)?.intValue, spoiler: (dict["spoiler"] as? NSNumber)?.boolValue, price: price, forceHd: forceHd, groupedId: (dict["groupedId"] as? NSNumber)?.int64Value, uniqueId: uniqueId)
@@ -230,7 +230,7 @@ public func legacyAssetPickerItemGenerator() -> ((Any?, NSAttributedString?, Str
                     let dimensions = (dict["dimensions"]! as AnyObject).cgSizeValue!
                     let duration = (dict["duration"]! as AnyObject).doubleValue!
                     
-                    result["item" as NSString] = LegacyAssetItemWrapper(item: .video(data: .tempFile(path: tempFileUrl.path, dimensions: dimensions, duration: duration), thumbnail: thumbnail, cover: nil, adjustments: nil, caption: caption, asFile: false, asAnimation: true, stickers: []), timer: (dict["timer"] as? NSNumber)?.intValue, spoiler: (dict["spoiler"] as? NSNumber)?.boolValue, price: price, groupedId: (dict["groupedId"] as? NSNumber)?.int64Value, uniqueId: uniqueId)
+                    result["item" as NSString] = LegacyAssetItemWrapper(item: .video(data: .tempFile(path: tempFileUrl.path, dimensions: dimensions, duration: duration), thumbnail: thumbnail, cover: nil, adjustments: nil, caption: caption, asFile: false, asAnimation: true, isRound: (dict["round"] as? NSNumber)?.boolValue ?? false, stickers: []), timer: (dict["timer"] as? NSNumber)?.intValue, spoiler: (dict["spoiler"] as? NSNumber)?.boolValue, price: price, groupedId: (dict["groupedId"] as? NSNumber)?.int64Value, uniqueId: uniqueId)
                     return result
                 }
                 
@@ -248,13 +248,13 @@ public func legacyAssetPickerItemGenerator() -> ((Any?, NSAttributedString?, Str
             
             if let asset = dict["asset"] as? TGMediaAsset {
                 var result: [AnyHashable: Any] = [:]
-                result["item" as NSString] = LegacyAssetItemWrapper(item: .video(data: .asset(asset), thumbnail: thumbnail, cover: cover, adjustments: dict["adjustments"] as? TGVideoEditAdjustments, caption: caption, asFile: asFile, asAnimation: false, stickers: stickers), timer: (dict["timer"] as? NSNumber)?.intValue, spoiler: (dict["spoiler"] as? NSNumber)?.boolValue, price: price, groupedId: (dict["groupedId"] as? NSNumber)?.int64Value, uniqueId: uniqueId)
+                result["item" as NSString] = LegacyAssetItemWrapper(item: .video(data: .asset(asset), thumbnail: thumbnail, cover: cover, adjustments: dict["adjustments"] as? TGVideoEditAdjustments, caption: caption, asFile: asFile, asAnimation: false, isRound: (dict["round"] as? NSNumber)?.boolValue ?? false, stickers: stickers), timer: (dict["timer"] as? NSNumber)?.intValue, spoiler: (dict["spoiler"] as? NSNumber)?.boolValue, price: price, groupedId: (dict["groupedId"] as? NSNumber)?.int64Value, uniqueId: uniqueId)
                 return result
             } else if let url = (dict["url"] as? String) ?? (dict["url"] as? URL)?.absoluteString {
                 let dimensions = (dict["dimensions"]! as AnyObject).cgSizeValue!
                 let duration = (dict["duration"]! as AnyObject).doubleValue!
                 var result: [AnyHashable: Any] = [:]
-                result["item" as NSString] = LegacyAssetItemWrapper(item: .video(data: .tempFile(path: url, dimensions: dimensions, duration: duration), thumbnail: thumbnail, cover: cover, adjustments: dict["adjustments"] as? TGVideoEditAdjustments, caption: caption, asFile: asFile, asAnimation: false, stickers: stickers), timer: (dict["timer"] as? NSNumber)?.intValue, spoiler: (dict["spoiler"] as? NSNumber)?.boolValue, price: price, groupedId: (dict["groupedId"] as? NSNumber)?.int64Value, uniqueId: uniqueId)
+                result["item" as NSString] = LegacyAssetItemWrapper(item: .video(data: .tempFile(path: url, dimensions: dimensions, duration: duration), thumbnail: thumbnail, cover: cover, adjustments: dict["adjustments"] as? TGVideoEditAdjustments, caption: caption, asFile: asFile, asAnimation: false, isRound: (dict["round"] as? NSNumber)?.boolValue ?? false, stickers: stickers), timer: (dict["timer"] as? NSNumber)?.intValue, spoiler: (dict["spoiler"] as? NSNumber)?.boolValue, price: price, groupedId: (dict["groupedId"] as? NSNumber)?.int64Value, uniqueId: uniqueId)
                 return result
             }
         } else if (dict["type"] as! NSString) == "cameraVideo" {
@@ -303,6 +303,7 @@ public func legacyAssetPickerItemGenerator() -> ((Any?, NSAttributedString?, Str
                             caption: caption,
                             asFile: asFile,
                             asAnimation: false,
+                            isRound: (dict["round"] as? NSNumber)?.boolValue ?? false,
                             stickers: stickers
                         ),
                         timer: (dict["timer"] as? NSNumber)?.intValue,
@@ -848,11 +849,14 @@ public func legacyAssetPickerEnqueueMessages(
                                 default:
                                     break
                             }
-                        case let .video(data, thumbnail, cover, adjustments, caption, asFile, asAnimation, stickers):
+                        case let .video(data, thumbnail, cover, adjustments, caption, asFile, asAnimation, isRound, stickers):
+                            let effectiveAsFile = isRound ? false : asFile
+                            let sourceDimensions: CGSize
                             var finalDimensions: CGSize
                             var finalDuration: Double
                             switch data {
                                 case let .asset(asset):
+                                    sourceDimensions = asset.dimensions
                                     if let adjustments = adjustments {
                                         if adjustments.cropApplied(forAvatar: false) {
                                             finalDimensions = adjustments.cropRect.size
@@ -872,6 +876,7 @@ public func legacyAssetPickerEnqueueMessages(
                                         finalDuration = asset.videoDuration
                                     }
                                 case let .tempFile(_, dimensions, duration):
+                                    sourceDimensions = dimensions
                                     finalDimensions = dimensions
                                     finalDuration = duration
                             }
@@ -919,20 +924,52 @@ public func legacyAssetPickerEnqueueMessages(
                             } else if preset == TGMediaVideoConversionPresetCompressedDefault && defaultPreset != TGMediaVideoConversionPresetCompressedDefault {
                                 preset = defaultPreset
                             }
-                            if asAnimation {
+                            if isRound {
+                                preset = TGMediaVideoConversionPresetVideoMessage
+                            } else if asAnimation {
                                 preset = TGMediaVideoConversionPresetAnimation
                             }
                             if !asAnimation {
-                                finalDimensions = TGMediaVideoConverter.dimensions(for: finalDimensions, adjustments: adjustments, preset: TGMediaVideoConversionPresetCompressedMedium)
+                                finalDimensions = TGMediaVideoConverter.dimensions(for: finalDimensions, adjustments: adjustments, preset: preset)
                             }
                             
                             var resourceAdjustments: VideoMediaResourceAdjustments?
+                            var adjustmentsDictionary: [AnyHashable: Any]?
                             if let adjustments = adjustments {
                                 if adjustments.trimApplied() {
                                     finalDuration = adjustments.trimEndValue - adjustments.trimStartValue
                                 }
-                                
-                                if let dict = adjustments.dictionary(), let data = try? NSKeyedArchiver.archivedData(withRootObject: dict, requiringSecureCoding: false) {
+                                adjustmentsDictionary = adjustments.dictionary()
+                            }
+                            if isRound {
+                                let cropSide = min(sourceDimensions.width, sourceDimensions.height)
+                                let cropRect = CGRect(
+                                    x: floor((sourceDimensions.width - cropSide) / 2.0),
+                                    y: floor((sourceDimensions.height - cropSide) / 2.0),
+                                    width: cropSide,
+                                    height: cropSide
+                                )
+                                if adjustmentsDictionary == nil {
+                                    adjustmentsDictionary = [:]
+                                }
+                                adjustmentsDictionary?["originalSize"] = NSValue(cgSize: sourceDimensions)
+                                adjustmentsDictionary?["cropRect"] = NSValue(cgRect: cropRect)
+                                adjustmentsDictionary?["cropOrientation"] = NSNumber(value: UIImage.Orientation.up.rawValue)
+                                adjustmentsDictionary?["cropMirrored"] = NSNumber(value: false)
+                                adjustmentsDictionary?["sendAsGif"] = NSNumber(value: false)
+                                adjustmentsDictionary?["preset"] = NSNumber(value: TGMediaVideoConversionPresetVideoMessage.rawValue)
+                                if finalDuration > 60.0 {
+                                    let trimStart = adjustments?.trimStartValue ?? 0.0
+                                    adjustmentsDictionary?["trimStart"] = NSNumber(value: trimStart)
+                                    adjustmentsDictionary?["trimEnd"] = NSNumber(value: trimStart + 60.0)
+                                    finalDuration = 60.0
+                                }
+                                if let roundAdjustmentsDictionary = adjustmentsDictionary, let roundAdjustments = TGVideoEditAdjustments(dictionary: roundAdjustmentsDictionary) {
+                                    finalDimensions = TGMediaVideoConverter.dimensions(for: sourceDimensions, adjustments: roundAdjustments, preset: TGMediaVideoConversionPresetVideoMessage)
+                                }
+                            }
+                            if let adjustmentsDictionary = adjustmentsDictionary {
+                                if let data = try? NSKeyedArchiver.archivedData(withRootObject: adjustmentsDictionary, requiringSecureCoding: false) {
                                     let adjustmentsData = MemoryBuffer(data: data)
                                     let digest = MemoryBuffer(data: adjustmentsData.md5Digest())
                                     resourceAdjustments = VideoMediaResourceAdjustments(data: adjustmentsData, digest: digest, isStory: false)
@@ -946,9 +983,9 @@ public func legacyAssetPickerEnqueueMessages(
                                     if let assetFileName = asset.fileName, !assetFileName.isEmpty {
                                         fileName = (assetFileName as NSString).lastPathComponent
                                     }
-                                    resource = VideoLibraryMediaResource(localIdentifier: asset.backingAsset.localIdentifier, conversion: asFile ? .passthrough : .compress(resourceAdjustments))
+                                    resource = VideoLibraryMediaResource(localIdentifier: asset.backingAsset.localIdentifier, conversion: effectiveAsFile ? .passthrough : .compress(resourceAdjustments))
                                 case let .tempFile(path, _, _):
-                                    if asFile || (asAnimation && !path.contains(".jpg")) {
+                                    if effectiveAsFile || (asAnimation && !path.contains(".jpg")) {
                                         if let size = fileSize(path) {
                                             resource = LocalFileMediaResource(fileId: Int64.random(in: Int64.min ... Int64.max), size: size)
                                             account.postbox.mediaBox.moveResourceData(resource.id, fromTempPath: path)
@@ -963,12 +1000,17 @@ public func legacyAssetPickerEnqueueMessages(
                             let estimatedSize = TGMediaVideoConverter.estimatedSize(for: preset, duration: finalDuration, hasAudio: !asAnimation)
                             
                             var fileAttributes: [TelegramMediaFileAttribute] = []
-                            fileAttributes.append(.FileName(fileName: fileName))
+                            if !isRound {
+                                fileAttributes.append(.FileName(fileName: fileName))
+                            }
                             if asAnimation {
                                 fileAttributes.append(.Animated)
                             }
-                            if !asFile {
-                                let flags: TelegramMediaVideoFlags = [.supportsStreaming]
+                            if !effectiveAsFile {
+                                var flags: TelegramMediaVideoFlags = [.supportsStreaming]
+                                if isRound {
+                                    flags.insert(.instantRoundVideo)
+                                }
                                 fileAttributes.append(.Video(duration: finalDuration, size: PixelDimensions(finalDimensions), flags: flags, preloadSize: nil, coverTime: nil, videoCodec: nil))
                                 if let adjustments = adjustments {
                                     if adjustments.sendAsGif {

@@ -99,6 +99,7 @@
     NSMutableDictionary *_adjustments;
     NSMutableDictionary *_timers;
     NSNumber *_timer;
+    NSMutableDictionary *_roundVideos;
     
     NSMutableDictionary *_spoilers;
     NSMutableDictionary *_prices;
@@ -169,6 +170,7 @@
         _captions = [[NSMutableDictionary alloc] init];
         _adjustments = [[NSMutableDictionary alloc] init];
         _timers = [[NSMutableDictionary alloc] init];
+        _roundVideos = [[NSMutableDictionary alloc] init];
         _spoilers = [[NSMutableDictionary alloc] init];
         _prices = [[NSMutableDictionary alloc] init];
         _livePhotoModes = [[NSMutableDictionary alloc] init];
@@ -656,6 +658,30 @@
     {
         return @true;
     }];
+}
+
+#pragma mark -
+
+- (bool)roundVideoForItem:(NSObject<TGMediaEditableItem> *)item
+{
+    NSString *itemId = [self _contextualIdForItemId:item.uniqueIdentifier];
+    if (itemId == nil)
+        return false;
+    
+    return [_roundVideos[itemId] boolValue];
+}
+
+- (void)setRoundVideo:(bool)roundVideo forItem:(NSObject<TGMediaEditableItem> *)item
+{
+    NSString *itemId = [self _contextualIdForItemId:item.uniqueIdentifier];
+    if (itemId == nil)
+        return;
+    
+    if (roundVideo) {
+        _roundVideos[itemId] = @true;
+    } else {
+        [_roundVideos removeObjectForKey:itemId];
+    }
 }
 
 #pragma mark -

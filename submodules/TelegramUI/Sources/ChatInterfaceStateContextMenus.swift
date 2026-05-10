@@ -2063,6 +2063,41 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                         f(.custom(transition))
                     })
                 })))
+
+                if let authorId = message.author?.id {
+                    let lang = chatPresentationInterfaceState.strings.primaryComponent.languageCode
+                    actions.append(.action(ContextMenuActionItem(text: MolteagramStrings.get("Molteagram.SelectAllFromSender", languageCode: lang), icon: { theme in
+                        return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/SelectAll"), color: theme.actionSheet.primaryTextColor)
+                    }, action: { _, f in
+                        let messageId = message.id
+                        let threadId = message.threadId
+                        let _ = (context.account.postbox.transaction { transaction -> [MessageId] in
+                            guard let currentMessage = transaction.getMessage(messageId) else {
+                                return [messageId]
+                            }
+                            let history = transaction.getMessages(peerId: messageId.peerId, namespace: messageId.namespace, threadId: threadId, from: currentMessage.index, includeFrom: true, to: MessageIndex.lowerBound(peerId: messageId.peerId, namespace: messageId.namespace), limit: 1000)
+
+                            var result: [MessageId] = []
+                            for item in history {
+                                if item.id == messageId || item.author?.id == authorId {
+                                    result.append(item.id)
+                                    if result.count >= 100 {
+                                        break
+                                    }
+                                }
+                            }
+                            if !result.contains(messageId) {
+                                result.insert(messageId, at: 0)
+                            }
+                            return result
+                        }
+                        |> deliverOnMainQueue).startStandalone(next: { ids in
+                            interfaceInteraction.beginMessageSelection(ids, { transition in
+                                f(.custom(transition))
+                            })
+                        })
+                    })))
+                }
             }
 
             if messages.count > 1 {

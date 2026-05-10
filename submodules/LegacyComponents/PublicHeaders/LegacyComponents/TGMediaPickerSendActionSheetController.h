@@ -9,7 +9,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy) void (^sendWhenOnline)(void);
 @property (nonatomic, copy) void (^schedule)(void);
 @property (nonatomic, copy) void (^sendWithTimer)(void);
+@property (nonatomic, assign) bool sendAsRoundVideo;
 
+- (instancetype)initWithContext:(id<LegacyComponentsContext>)context isDark:(bool)isDark sendButtonFrame:(CGRect)sendButtonFrame canSendSilently:(bool)canSendSilently canSendWhenOnline:(bool)canSendWhenOnline canSchedule:(bool)canSchedule reminder:(bool)reminder hasTimer:(bool)hasTimer hasRoundVideo:(bool)hasRoundVideo roundVideoTitle:(NSString *)roundVideoTitle;
 - (instancetype)initWithContext:(id<LegacyComponentsContext>)context isDark:(bool)isDark sendButtonFrame:(CGRect)sendButtonFrame canSendSilently:(bool)canSendSilently canSendWhenOnline:(bool)canSendWhenOnline canSchedule:(bool)canSchedule reminder:(bool)reminder hasTimer:(bool)hasTimer;
 
 @end

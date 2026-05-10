@@ -24,6 +24,7 @@ swift_library(
         "//submodules/PhoneNumberFormat:PhoneNumberFormat",
         "//submodules/LegacyComponents:LegacyComponents",
         "//submodules/LegacyMediaPickerUI:LegacyMediaPickerUI",
+        "//submodules/MolteagramCore",
         "//submodules/PasswordSetupUI:PasswordSetupUI",
         "//submodules/TelegramNotices:TelegramNotices",
         "//submodules/ProgressNavigationButtonNode:ProgressNavigationButtonNode",
@@ -48,6 +49,7 @@ swift_library(
         "//submodules/TelegramUI/Components/PlainButtonComponent",
         "//submodules/Utils/DeviceModel",
         "//submodules/PresentationDataUtils",
+        "//third-party/ZipArchive:ZipArchive",
     ],
     visibility = [
         "//visibility:public",

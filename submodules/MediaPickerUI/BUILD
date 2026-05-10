@@ -22,6 +22,7 @@ swift_library(
         "//submodules/AppBundle:AppBundle",
         "//submodules/CheckNode:CheckNode",
         "//submodules/MergeLists:MergeLists",
+        "//submodules/MolteagramCore",
         "//submodules/LegacyComponents:LegacyComponents",
         "//submodules/LegacyUI:LegacyUI",
         "//submodules/LegacyMediaPickerUI:LegacyMediaPickerUI",

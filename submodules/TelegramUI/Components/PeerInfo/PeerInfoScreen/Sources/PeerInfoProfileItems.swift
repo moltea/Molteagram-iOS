@@ -189,7 +189,8 @@ func infoItems(
             )
         }
         if MolteagramInterceptor.shared.current.showUserId {
-            items[currentPeerInfoSection]!.append(PeerInfoScreenActionItem(id: 501, text: "ID: \(user.id.toInt64())", action: {
+            let userIdPrefix = MolteagramStrings.get("Molteagram.AccountsUserIdPrefix", languageCode: presentationData.strings.primaryComponent.languageCode)
+            items[currentPeerInfoSection]!.append(PeerInfoScreenActionItem(id: 501, text: "\(userIdPrefix) \(user.id.toInt64())", action: {
                 interaction.copyId("\(user.id.toInt64())")
             }))
         }
@@ -554,7 +555,8 @@ func infoItems(
         }
         
         if (MolteagramInterceptor.shared.current.showChannelsId && !isGigagroup) || (isGigagroup && MolteagramInterceptor.shared.current.showGroupsId) {
-            items[.peerMembers]!.append(PeerInfoScreenActionItem(id: 501, text: "ID: -100\(channel.id.id._internalGetInt64Value())", action: {
+            let userIdPrefix = MolteagramStrings.get("Molteagram.AccountsUserIdPrefix", languageCode: presentationData.strings.primaryComponent.languageCode)
+            items[.peerMembers]!.append(PeerInfoScreenActionItem(id: 501, text: "\(userIdPrefix) -100\(channel.id.id._internalGetInt64Value())", action: {
                 interaction.copyId("-100\(channel.id.id._internalGetInt64Value())")
             }))
         }
@@ -814,7 +816,8 @@ func infoItems(
         }
     } else if case let .legacyGroup(group) = data.peer {
         if MolteagramInterceptor.shared.current.showGroupsId {
-            items[.peerMembers]!.append(PeerInfoScreenActionItem(id: 501, text: "ID: -\(group.id.id._internalGetInt64Value())", action: {
+            let userIdPrefix = MolteagramStrings.get("Molteagram.AccountsUserIdPrefix", languageCode: presentationData.strings.primaryComponent.languageCode)
+            items[.peerMembers]!.append(PeerInfoScreenActionItem(id: 501, text: "\(userIdPrefix) -\(group.id.id._internalGetInt64Value())", action: {
                 interaction.copyId("-\(group.id.id._internalGetInt64Value())")
             }))
         }

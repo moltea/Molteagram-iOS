@@ -4,6 +4,7 @@ import Display
 import SwiftSignalKit
 import Postbox
 import TelegramCore
+import MolteagramCore
 import TelegramPresentationData
 import TelegramUIPreferences
 import TelegramStringFormatting
@@ -39,6 +40,58 @@ import Photos
 import AttachmentFileController
 
 extension ChatControllerImpl {
+    private func molteagramVoiceFile(from file: TelegramMediaFile) -> TelegramMediaFile {
+        var duration = 0
+        var waveform: Data?
+        var attributes: [TelegramMediaFileAttribute] = []
+        for attribute in file.attributes {
+            if case let .Audio(_, audioDuration, _, _, audioWaveform) = attribute {
+                duration = audioDuration
+                waveform = audioWaveform
+            } else if case .FileName = attribute {
+            } else {
+                attributes.append(attribute)
+            }
+        }
+        attributes.append(.Audio(isVoice: true, duration: duration, title: nil, performer: nil, waveform: waveform))
+        
+        return TelegramMediaFile(fileId: file.fileId, partialReference: file.partialReference, resource: file.resource, previewRepresentations: file.previewRepresentations, videoThumbnails: file.videoThumbnails, videoCover: file.videoCover, immediateThumbnailData: file.immediateThumbnailData, mimeType: file.mimeType, size: file.size, attributes: attributes, alternativeRepresentations: file.alternativeRepresentations)
+    }
+    
+    private func molteagramVoiceMediaReference(from mediaReference: AnyMediaReference) -> AnyMediaReference {
+        guard let file = mediaReference.media as? TelegramMediaFile else {
+            return mediaReference
+        }
+        return mediaReference.withUpdatedMedia(self.molteagramVoiceFile(from: file))
+    }
+    
+    private func presentMolteagramAudioSendMode(completion: @escaping (Bool) -> Void) {
+        let presentationData = self.presentationData
+        let lang = presentationData.strings.primaryComponent.languageCode
+        let actionSheet = ActionSheetController(presentationData: presentationData)
+        let dismissAction: () -> Void = { [weak actionSheet] in
+            actionSheet?.dismissAnimated()
+        }
+        actionSheet.setItemGroups([
+            ActionSheetItemGroup(items: [
+                ActionSheetButtonItem(title: MolteagramStrings.get("Molteagram.AudioSendAsFile", languageCode: lang), color: .accent, action: {
+                    dismissAction()
+                    completion(false)
+                }),
+                ActionSheetButtonItem(title: MolteagramStrings.get("Molteagram.AudioSendAsVoice", languageCode: lang), color: .accent, action: {
+                    dismissAction()
+                    completion(true)
+                })
+            ]),
+            ActionSheetItemGroup(items: [
+                ActionSheetButtonItem(title: MolteagramStrings.get("Molteagram.Cancel", languageCode: lang), color: .accent, font: .bold, action: {
+                    dismissAction()
+                })
+            ])
+        ])
+        self.present(actionSheet, in: .window(.root))
+    }
+    
     enum AttachMenuSubject {
         case `default`
         case edit(mediaOptions: MessageMediaEditingOptions, mediaReference: AnyMediaReference)
@@ -430,6 +483,12 @@ extension ChatControllerImpl {
                         guard let self else {
                             return
                         }
+                        self.presentMolteagramAudioSendMode { [weak self] sendAsVoice in
+                            guard let self else {
+                                return
+                            }
+                            let mediaReferences = sendAsVoice ? mediaReferences.map(self.molteagramVoiceMediaReference(from:)) : mediaReferences
+                            
                         var messages: [EnqueueMessage] = []
                         var groupingKey: Int64?
                         if mediaReferences.count > 1 {
@@ -458,6 +517,7 @@ extension ChatControllerImpl {
                         self.presentPaidMessageAlertIfNeeded(completion: { [weak self] postpone in
                             self?.sendMessages(messages, media: true, postpone: postpone)
                         })
+                        }
                     })
                     if let controller = controller as? AttachmentFileControllerImpl {
                         let _ = currentAudioController.swap(controller)
@@ -1185,7 +1245,14 @@ extension ChatControllerImpl {
         })
     }
 
-    func presentICloudFileGallery(editingMessage: Bool = false, documentTypes: [String] = ["public.item"]) {
+    func presentICloudFileGallery(editingMessage: Bool = false, documentTypes: [String] = ["public.item"], audioSendAsVoice: Bool? = nil) {
+        if audioSendAsVoice == nil && documentTypes != ["public.item"] {
+            self.presentMolteagramAudioSendMode { [weak self] sendAsVoice in
+                self?.presentICloudFileGallery(editingMessage: editingMessage, documentTypes: documentTypes, audioSendAsVoice: sendAsVoice)
+            }
+            return
+        }
+        
         let _ = (self.context.engine.data.get(
             TelegramEngine.EngineData.Item.Peer.Peer(id: self.context.account.peerId),
             TelegramEngine.EngineData.Item.Configuration.UserLimits(isPremium: false),
@@ -1261,9 +1328,11 @@ extension ChatControllerImpl {
                                         previewRepresentations.append(TelegramMediaImageRepresentation(dimensions: PixelDimensions(width: 320, height: 320), resource: ICloudFileResource(urlData: item.urlData, thumbnail: true), progressiveSizes: [], immediateThumbnailData: nil, hasVideo: false, isPersonal: false))
                                     }
                                     var attributes: [TelegramMediaFileAttribute] = []
-                                    attributes.append(.FileName(fileName: item.fileName))
+                                    if audioSendAsVoice != true {
+                                        attributes.append(.FileName(fileName: item.fileName))
+                                    }
                                     if let audioMetadata = item.audioMetadata {
-                                        attributes.append(.Audio(isVoice: false, duration: audioMetadata.duration, title: audioMetadata.title, performer: audioMetadata.performer, waveform: nil))
+                                        attributes.append(.Audio(isVoice: audioSendAsVoice == true, duration: audioMetadata.duration, title: audioSendAsVoice == true ? nil : audioMetadata.title, performer: audioSendAsVoice == true ? nil : audioMetadata.performer, waveform: nil))
                                     }
 
                                     let file = TelegramMediaFile(fileId: MediaId(namespace: Namespaces.Media.LocalFile, id: fileId), partialReference: nil, resource: ICloudFileResource(urlData: item.urlData, thumbnail: false), previewRepresentations: previewRepresentations, videoThumbnails: [], immediateThumbnailData: nil, mimeType: mimeType, size: Int64(item.fileSize), attributes: attributes, alternativeRepresentations: [])

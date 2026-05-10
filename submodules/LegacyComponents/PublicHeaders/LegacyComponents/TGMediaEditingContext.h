@@ -101,6 +101,9 @@ typedef NS_ENUM(NSUInteger, TGMediaLivePhotoMode)
 - (void)setTimer:(NSNumber *)timer forItem:(NSObject<TGMediaEditableItem> *)item;
 - (SSignal *)timersUpdatedSignal;
 
+- (bool)roundVideoForItem:(NSObject<TGMediaEditableItem> *)item;
+- (void)setRoundVideo:(bool)roundVideo forItem:(NSObject<TGMediaEditableItem> *)item;
+
 - (bool)spoilerForItem:(NSObject<TGMediaEditableItem> *)item;
 - (SSignal *)spoilerSignalForItem:(NSObject<TGMediaEditableItem> *)item;
 - (SSignal *)spoilerSignalForIdentifier:(NSString *)identifier;

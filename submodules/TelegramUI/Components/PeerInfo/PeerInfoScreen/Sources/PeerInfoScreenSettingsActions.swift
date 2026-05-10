@@ -216,44 +216,7 @@ extension PeerInfoScreenNode {
             }
             push(usernameSetupController(context: self.context))
         case .addAccount:
-            let _ = (activeAccountsAndPeers(context: context)
-            |> take(1)
-            |> deliverOnMainQueue
-            ).startStandalone(next: { [weak self] accountAndPeer, accountsAndPeers in
-                guard let strongSelf = self else {
-                    return
-                }
-                var maximumAvailableAccounts: Int = 3
-                if accountAndPeer?.1.isPremium == true && !strongSelf.context.account.testingEnvironment {
-                    maximumAvailableAccounts = 4
-                }
-                var count: Int = 1
-                for (accountContext, peer, _) in accountsAndPeers {
-                    if !accountContext.account.testingEnvironment {
-                        if peer.isPremium {
-                            maximumAvailableAccounts = 4
-                        }
-                        count += 1
-                    }
-                }
-                
-                if count >= maximumAvailableAccounts {
-                    var replaceImpl: ((ViewController) -> Void)?
-                    let controller = PremiumLimitScreen(context: strongSelf.context, subject: .accounts, count: Int32(count), action: {
-                        let controller = PremiumIntroScreen(context: strongSelf.context, source: .accounts)
-                        replaceImpl?(controller)
-                        return true
-                    })
-                    replaceImpl = { [weak controller] c in
-                        controller?.replace(with: c)
-                    }
-                    if let navigationController = strongSelf.context.sharedContext.mainWindow?.viewController as? NavigationController {
-                        navigationController.pushViewController(controller)
-                    }
-                } else {
-                    strongSelf.context.sharedContext.beginNewAuth(testingEnvironment: strongSelf.context.account.testingEnvironment)
-                }
-            })
+            self.context.sharedContext.beginNewAuth(testingEnvironment: self.context.account.testingEnvironment)
         case .logout:
             if case let .user(user) = self.data?.peer, let phoneNumber = user.phone {
                 if let controller = self.controller, let navigationController = controller.navigationController as? NavigationController {

@@ -11,10 +11,13 @@ import AsyncDisplayKit
 import ComponentFlow
 import ComponentDisplayAdapters
 import EmojiStatusComponent
+import MolteagramCore
 
 extension PeerInfoScreenNode {
-    func accountContextMenuItems(context: AccountContext, logout: @escaping () -> Void) -> Signal<[ContextMenuItem], NoError> {
-        let strings = context.sharedContext.currentPresentationData.with({ $0 }).strings
+    func accountContextMenuItems(context: AccountContext, logout: @escaping () -> Void, logoutKeepSession: @escaping () -> Void) -> Signal<[ContextMenuItem], NoError> {
+        let presentationData = context.sharedContext.currentPresentationData.with({ $0 })
+        let strings = presentationData.strings
+        let lang = strings.primaryComponent.languageCode
         return context.engine.messages.unreadChatListPeerIds(groupId: .root, filterPredicate: nil)
         |> map { unreadChatListPeerIds -> [ContextMenuItem] in
             var items: [ContextMenuItem] = []
@@ -55,6 +58,8 @@ extension PeerInfoScreenNode {
                     
             let contextController = makeContextController(presentationData: self.presentationData, source: .controller(ContextControllerContentSourceImpl(controller: chatListController, sourceNode: node)), items: accountContextMenuItems(context: accountContext, logout: { [weak self] in
                 self?.logoutAccount(id: id)
+            }, logoutKeepSession: { [weak self] in
+                self?.logoutAccountKeepSession(id: id)
             }) |> map { ContextController.Items(content: .list($0)) }, gesture: gesture)
             self.controller?.presentInGlobalOverlay(contextController)
         } else {
@@ -75,6 +80,12 @@ extension PeerInfoScreenNode {
         
         var items: [ActionSheetItem] = []
         items.append(ActionSheetTextItem(title: self.presentationData.strings.Settings_LogoutConfirmationText.trimmingCharacters(in: .whitespacesAndNewlines)))
+        items.append(ActionSheetButtonItem(title: MolteagramStrings.get("Molteagram.LogoutKeepSession", languageCode: self.presentationData.strings.primaryComponent.languageCode), color: .destructive, action: { [weak self] in
+            dismissAction()
+            if let strongSelf = self {
+                let _ = logoutFromAccount(id: id, accountManager: strongSelf.context.sharedContext.accountManager, alreadyLoggedOutRemotely: true).startStandalone()
+            }
+        }))
         items.append(ActionSheetButtonItem(title: self.presentationData.strings.Settings_Logout, color: .destructive, action: { [weak self] in
             dismissAction()
             if let strongSelf = self {
@@ -83,6 +94,28 @@ extension PeerInfoScreenNode {
         }))
         controller.setItemGroups([
             ActionSheetItemGroup(items: items),
+            ActionSheetItemGroup(items: [ActionSheetButtonItem(title: presentationData.strings.Common_Cancel, action: { dismissAction() })])
+        ])
+        self.controller?.present(controller, in: .window(.root), with: ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
+    }
+
+    func logoutAccountKeepSession(id: AccountRecordId) {
+        let lang = self.presentationData.strings.primaryComponent.languageCode
+        let controller = ActionSheetController(presentationData: self.presentationData)
+        let dismissAction: () -> Void = { [weak controller] in
+            controller?.dismissAnimated()
+        }
+        
+        controller.setItemGroups([
+            ActionSheetItemGroup(items: [
+                ActionSheetTextItem(title: MolteagramStrings.get("Molteagram.LogoutKeepSessionConfirmation", languageCode: lang)),
+                ActionSheetButtonItem(title: MolteagramStrings.get("Molteagram.LogoutKeepSession", languageCode: lang), color: .destructive, action: { [weak self] in
+                    dismissAction()
+                    if let strongSelf = self {
+                        let _ = logoutFromAccount(id: id, accountManager: strongSelf.context.sharedContext.accountManager, alreadyLoggedOutRemotely: true).startStandalone()
+                    }
+                })
+            ]),
             ActionSheetItemGroup(items: [ActionSheetButtonItem(title: presentationData.strings.Common_Cancel, action: { dismissAction() })])
         ])
         self.controller?.present(controller, in: .window(.root), with: ViewControllerPresentationArguments(presentationAnimation: .modalSheet))

@@ -143,6 +143,7 @@ swift_library(
         "//submodules/TelegramUI/Components/ListSectionComponent",
         "//submodules/TelegramUI/Components/ListActionItemComponent",
         "//submodules/Utils/DeviceModel",
+        "//third-party/ZipArchive:ZipArchive",
     ],
     visibility = [
         "//visibility:public",
