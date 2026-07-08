@@ -70,6 +70,13 @@ class BazelCommandLine:
             # Asynchronously upload cache artifacts
             '--remote_cache_async',
         ]
+        if override_xcode_version:
+            xcode_path = run_executable_with_output('xcode-select', ['-p']).strip('\n')
+            self.common_args += [
+                '--xcode_version={}'.format(self.build_environment.xcode_version),
+                '--repo_env=XCODE_VERSION={}'.format(self.build_environment.xcode_version),
+                '--repo_env=DEVELOPER_DIR={}'.format(xcode_path),
+            ]
 
         self.common_build_args = [
         ]

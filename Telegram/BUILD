@@ -591,7 +591,15 @@ official_notification_filtering_fragment = """
 <key>com.apple.developer.usernotifications.filtering</key>
 <true/>
 """
-notification_filtering_fragment = official_notification_filtering_fragment if telegram_bundle_id == "ph.telegra.Telegraph" else ""
+notification_filtering_bundle_ids = [
+    "ph.telegra.Telegraph",
+]
+notification_filtering_fragment = official_notification_filtering_fragment if telegram_bundle_id in notification_filtering_bundle_ids else ""
+
+notification_service_filtering_bundle_ids = [
+    "org.56f2af7217aed177.Telegram",
+]
+notification_service_filtering_fragment = official_notification_filtering_fragment if telegram_bundle_id in notification_service_filtering_bundle_ids else ""
 
 store_signin_fragment = """
 <key>com.apple.developer.applesignin</key>
@@ -636,6 +644,7 @@ plist_fragment(
         aps_fragment,
         shared_app_groups_fragment,
         communication_notifications_fragment,
+        notification_service_filtering_fragment,
         keychain_access_groups_fragment,
         beta_reports_active_fragment,
     ])
