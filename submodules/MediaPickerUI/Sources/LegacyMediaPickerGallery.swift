@@ -3,7 +3,6 @@ import UIKit
 import Display
 import SwiftSignalKit
 import TelegramCore
-import Postbox
 import SSignalKit
 import TelegramPresentationData
 import MolteagramCore
@@ -164,6 +163,15 @@ func presentLegacyMediaPickerGallery(
     legacyController.statusBar.statusBarStyle = presentationData.theme.rootController.statusBarStyle.style
     
     let paintStickersContext = LegacyPaintStickersContext(context: context)
+    paintStickersContext.presentMediaPickerSendActionMenu = makeLegacyMediaPickerSendActionMenuPresenter(context: context, presentationData: presentationData, presentInGlobalOverlay: { [weak legacyController] controller in
+        if let legacyController {
+            legacyController.presentInGlobalOverlay(controller)
+        } else if let mainWindow = context.sharedContext.mainWindow {
+            mainWindow.presentInGlobalOverlay(controller)
+        } else {
+            context.sharedContext.presentGlobalController(controller, nil)
+        }
+    })
     paintStickersContext.captionPanelView = {
         return getCaptionPanelView()
     }
@@ -176,6 +184,9 @@ func presentLegacyMediaPickerGallery(
         let livePhotoButton = LivePhotoButton(context: context)
         livePhotoButton.present = present
         return livePhotoButton
+    }
+    paintStickersContext.photoToolbarView = { backButton, doneButton, solidBackground, hasSendStarsButton in
+        return makeMediaPickerPhotoToolbarView(context: context, backButton: backButton, doneButton: doneButton, solidBackground: solidBackground, hasSendStarsButton: hasSendStarsButton)
     }
     paintStickersContext.editCover = { dimensions, completion in
         editCover(dimensions, completion)
@@ -310,7 +321,7 @@ func presentLegacyMediaPickerGallery(
         }
     }
     if !isScheduledMessages && peer != nil {
-        model.interfaceView.doneLongPressed = { [weak selectionContext, weak editingContext, weak legacyController, weak model] item in
+        model.interfaceView.doneLongPressed = { [weak selectionContext, weak editingContext, weak legacyController, weak model, weak paintStickersContext] item, sourceView in
             if let legacyController = legacyController, let item = item as? TGMediaPickerGalleryItem, let model = model, let selectionContext = selectionContext {
                 var effectiveHasSchedule = hasSchedule
                 
@@ -356,6 +367,70 @@ func presentLegacyMediaPickerGallery(
                 let _ = (sendWhenOnlineAvailable
                 |> take(1)
                 |> deliverOnMainQueue).start(next: { sendWhenOnlineAvailable in
+                    var sendAsRoundVideo = false
+                    let markRoundVideoItemsIfNeeded = {
+                        if sendAsRoundVideo {
+                            var items = selectionContext.selectedItems() ?? []
+                            items.append(item.asset as Any)
+                            for case let item as TGMediaEditableItem in items {
+                                editingContext?.setRoundVideo(true, for: item)
+                            }
+                        }
+                    }
+                    let dismissImpl = { [weak model] in
+                        model?.dismiss(true, false)
+                        dismissAll()
+                    }
+                    let send = {
+                        markRoundVideoItemsIfNeeded()
+                        completed(item.asset, false, nil, {
+                            dismissImpl()
+                        })
+                    }
+                    let sendSilently = { [weak model] in
+                        model?.interfaceView.onDismiss()
+                        
+                        markRoundVideoItemsIfNeeded()
+                        completed(item.asset, true, nil, {
+                            dismissImpl()
+                        })
+                    }
+                    let sendWhenOnline = {
+                        markRoundVideoItemsIfNeeded()
+                        completed(item.asset, false, scheduleWhenOnlineTimestamp, {
+                            dismissImpl()
+                        })
+                    }
+                    let schedule = {
+                        presentSchedulePicker(true, { time, silentPosting in
+                            markRoundVideoItemsIfNeeded()
+                            completed(item.asset, silentPosting, time, {
+                                dismissImpl()
+                            })
+                        })
+                    }
+                    let sendWithTimer = {
+                        presentTimerPicker { time in
+                            var items = selectionContext.selectedItems() ?? []
+                            items.append(item.asset as Any)
+                            
+                            for case let item as TGMediaEditableItem in items {
+                                editingContext?.setTimer(time as NSNumber, for: item)
+                            }
+                            
+                            markRoundVideoItemsIfNeeded()
+                            completed(item.asset, false, nil, {
+                                dismissImpl()
+                            })
+                        }
+                    }
+
+                    if let sourceView, let paintStickersContext, paintStickersContext.presentMediaPickerSendActionMenu?(sourceView, hasSilentPosting, sendWhenOnlineAvailable && effectiveHasSchedule, effectiveHasSchedule, reminder, hasTimer, sendSilently, sendWhenOnline, schedule, sendWithTimer) == true {
+                        let hapticFeedback = HapticFeedback()
+                        hapticFeedback.impact()
+                        return
+                    }
+
                     let legacySheetController = LegacyController(presentation: .custom, theme: presentationData.theme, initialLayout: nil)
                     var hasRoundVideo = mediaPickerItemIsVideo(item.asset as Any)
                     if !hasRoundVideo {
@@ -368,78 +443,25 @@ func presentLegacyMediaPickerGallery(
                     }
                     let lang = presentationData.strings.primaryComponent.languageCode
                     let sheetController = TGMediaPickerSendActionSheetController(context: legacyController.context, isDark: true, sendButtonFrame: model.interfaceView.doneButtonFrame, canSendSilently: hasSilentPosting, canSendWhenOnline: sendWhenOnlineAvailable && effectiveHasSchedule, canSchedule: effectiveHasSchedule, reminder: reminder, hasTimer: hasTimer, hasRoundVideo: hasRoundVideo, roundVideoTitle: MolteagramStrings.get("Molteagram.SendAsRoundVideo", languageCode: lang))
-                    let dismissImpl = { [weak model] in
-                        model?.dismiss(true, false)
-                        dismissAll()
-                    }
                     sheetController.send = {
-                        if sheetController.sendAsRoundVideo {
-                            var items = selectionContext.selectedItems() ?? []
-                            items.append(item.asset as Any)
-                            for case let item as TGMediaEditableItem in items {
-                                editingContext?.setRoundVideo(true, for: item)
-                            }
-                        }
-                        completed(item.asset, false, nil, {
-                            dismissImpl()
-                        })
+                        sendAsRoundVideo = sheetController.sendAsRoundVideo
+                        send()
                     }
-                    sheetController.sendSilently = { [weak model] in
-                        model?.interfaceView.onDismiss()
-                        if sheetController.sendAsRoundVideo {
-                            var items = selectionContext.selectedItems() ?? []
-                            items.append(item.asset as Any)
-                            for case let item as TGMediaEditableItem in items {
-                                editingContext?.setRoundVideo(true, for: item)
-                            }
-                        }
-                        
-                        completed(item.asset, true, nil, {
-                            dismissImpl()
-                        })
+                    sheetController.sendSilently = {
+                        sendAsRoundVideo = sheetController.sendAsRoundVideo
+                        sendSilently()
                     }
                     sheetController.sendWhenOnline = {
-                        if sheetController.sendAsRoundVideo {
-                            var items = selectionContext.selectedItems() ?? []
-                            items.append(item.asset as Any)
-                            for case let item as TGMediaEditableItem in items {
-                                editingContext?.setRoundVideo(true, for: item)
-                            }
-                        }
-                        completed(item.asset, false, scheduleWhenOnlineTimestamp, {
-                            dismissImpl()
-                        })
+                        sendAsRoundVideo = sheetController.sendAsRoundVideo
+                        sendWhenOnline()
                     }
                     sheetController.schedule = {
-                        presentSchedulePicker(true, { time, silentPosting in
-                            if sheetController.sendAsRoundVideo {
-                                var items = selectionContext.selectedItems() ?? []
-                                items.append(item.asset as Any)
-                                for case let item as TGMediaEditableItem in items {
-                                    editingContext?.setRoundVideo(true, for: item)
-                                }
-                            }
-                            completed(item.asset, silentPosting, time, {
-                                dismissImpl()
-                            })
-                        })
+                        sendAsRoundVideo = sheetController.sendAsRoundVideo
+                        schedule()
                     }
                     sheetController.sendWithTimer = {
-                        presentTimerPicker { time in
-                            var items = selectionContext.selectedItems() ?? []
-                            items.append(item.asset as Any)
-                            
-                            for case let item as TGMediaEditableItem in items {
-                                editingContext?.setTimer(time as NSNumber, for: item)
-                                if sheetController.sendAsRoundVideo {
-                                    editingContext?.setRoundVideo(true, for: item)
-                                }
-                            }
-                            
-                            completed(item.asset, false, nil, {
-                                dismissImpl()
-                            })
-                        }
+                        sendAsRoundVideo = sheetController.sendAsRoundVideo
+                        sendWithTimer()
                     }
                     sheetController.customDismissBlock = { [weak legacySheetController] in
                         legacySheetController?.dismiss()

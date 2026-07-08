@@ -10,14 +10,13 @@ swift_library(
         
     ],
     deps = [
-        "//submodules/Postbox",
+        "//submodules/TelegramCore",
         "//submodules/TemporaryCachedPeerDataManager",
         "//submodules/TelegramUIPreferences",
         "//submodules/TelegramNotices",
         "//submodules/InstantPageUI",
         "//submodules/AccountContext",
         "//submodules/LocalMediaResources",
-        "//submodules/WebSearchUI",
         "//submodules/InstantPageCache",
         "//submodules/SettingsUI",
         "//submodules/WallpaperResources",

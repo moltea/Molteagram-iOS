@@ -41,10 +41,6 @@ private final class UpdatedWebpageSubscriberContext {
     let subscribers = Bag<(TelegramMediaWebpage) -> Void>()
 }
 
-private final class UpdatedPeersNearbySubscriberContext {
-    let subscribers = Bag<([PeerNearby]) -> Void>()
-}
-
 private final class UpdatedStarsBalanceSubscriberContext {
     let subscribers = Bag<([PeerId: StarsAmount]) -> Void>()
 }
@@ -265,6 +261,11 @@ public final class AccountStateManager {
         public var dismissBotWebViews: Signal<[Int64], NoError> {
             return self.dismissBotWebViewsPipe.signal()
         }
+
+        private let joinChatWebViewDecisionsPipe = ValuePipe<[JoinChatWebViewDecision]>()
+        public var joinChatWebViewDecisions: Signal<[JoinChatWebViewDecision], NoError> {
+            return self.joinChatWebViewDecisionsPipe.signal()
+        }
         
         private let externallyUpdatedPeerIdsPipe = ValuePipe<[PeerId]>()
         var externallyUpdatedPeerIds: Signal<[PeerId], NoError> {
@@ -367,7 +368,6 @@ public final class AccountStateManager {
         }
         
         private var updatedWebpageContexts: [MediaId: UpdatedWebpageSubscriberContext] = [:]
-        private var updatedPeersNearbyContext = UpdatedPeersNearbySubscriberContext()
         private var updatedStarsBalanceContext = UpdatedStarsBalanceSubscriberContext()
         private var updatedTonBalanceContext = UpdatedStarsBalanceSubscriberContext()
         private var updatedStarsRevenueStatusContext = UpdatedStarsRevenueStatusSubscriberContext()
@@ -1137,9 +1137,6 @@ public final class AccountStateManager {
                             if !events.updatedWebpages.isEmpty {
                                 strongSelf.notifyUpdatedWebpages(events.updatedWebpages)
                             }
-                            if let updatedPeersNearby = events.updatedPeersNearby {
-                                strongSelf.notifyUpdatedPeersNearby(updatedPeersNearby)
-                            }
                             if !events.updatedStarsBalance.isEmpty {
                                 strongSelf.notifyUpdatedStarsBalance(events.updatedStarsBalance)
                             }
@@ -1281,6 +1278,10 @@ public final class AccountStateManager {
                     self.dismissBotWebViewsPipe.putNext(events.dismissBotWebViews)
                 }
                 
+                if !events.joinChatWebViewDecisions.isEmpty {
+                    self.joinChatWebViewDecisionsPipe.putNext(events.joinChatWebViewDecisions)
+                }
+
                 if !events.externallyUpdatedPeerId.isEmpty {
                     self.externallyUpdatedPeerIdsPipe.putNext(Array(events.externallyUpdatedPeerId))
                 }
@@ -1719,34 +1720,7 @@ public final class AccountStateManager {
                 }
             }
         }
-        
-        public func updatedPeersNearby() -> Signal<[PeerNearby], NoError> {
-            let queue = self.queue
-            return Signal { [weak self] subscriber in
-                let disposable = MetaDisposable()
-                queue.async {
-                    if let strongSelf = self {
-                        let index = strongSelf.updatedPeersNearbyContext.subscribers.add({ peersNearby in
-                            subscriber.putNext(peersNearby)
-                        })
-                        
-                        disposable.set(ActionDisposable {
-                            if let strongSelf = self {
-                                strongSelf.updatedPeersNearbyContext.subscribers.remove(index)
-                            }
-                        })
-                    }
-                }
-                return disposable
-            }
-        }
-        
-        private func notifyUpdatedPeersNearby(_ updatedPeersNearby: [PeerNearby]) {
-            for subscriber in self.updatedPeersNearbyContext.subscribers.copyItems() {
-                subscriber(updatedPeersNearby)
-            }
-        }
-        
+                
         public func updatedStarsBalance() -> Signal<[PeerId: StarsAmount], NoError> {
             let queue = self.queue
             return Signal { [weak self] subscriber in
@@ -1973,6 +1947,12 @@ public final class AccountStateManager {
         }
     }
     
+    public var joinChatWebViewDecisions: Signal<[JoinChatWebViewDecision], NoError> {
+        return self.impl.signalWith { impl, subscriber in
+            return impl.joinChatWebViewDecisions.start(next: subscriber.putNext, error: subscriber.putError, completed: subscriber.putCompletion)
+        }
+    }
+
     var externallyUpdatedPeerIds: Signal<[PeerId], NoError> {
         return self.impl.signalWith { impl, subscriber in
             return impl.externallyUpdatedPeerIds.start(next: subscriber.putNext, error: subscriber.putError, completed: subscriber.putCompletion)
@@ -2242,12 +2222,6 @@ public final class AccountStateManager {
     func removePossiblyDeliveredMessages(uniqueIds: [Int64: PeerId]) {
         self.impl.with { impl in
             impl.removePossiblyDeliveredMessages(uniqueIds: uniqueIds)
-        }
-    }
-    
-    public func updatedPeersNearby() -> Signal<[PeerNearby], NoError> {
-        return self.impl.signalWith { impl, subscriber in
-            return impl.updatedPeersNearby().start(next: subscriber.putNext, error: subscriber.putError, completed: subscriber.putCompletion)
         }
     }
     

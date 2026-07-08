@@ -5,7 +5,6 @@ import AsyncDisplayKit
 import Display
 import ComponentFlow
 import ViewControllerComponent
-import Postbox
 import TelegramCore
 import AccountContext
 import PlainButtonComponent
@@ -1419,7 +1418,7 @@ final class VideoChatScreenComponent: Component {
             )
             self.inputMediaInteraction?.forceTheme = defaultDarkColorPresentationTheme
             
-            let _ = (allowedStoryReactions(account: context.account)
+            let _ = (allowedStoryReactions(engine: context.engine)
             |> deliverOnMainQueue).start(next: { [weak self] reactionItems in
                 self?.reactionItems = reactionItems
             })
@@ -2620,6 +2619,7 @@ final class VideoChatScreenComponent: Component {
             
             let videoButtonContent: VideoChatActionButtonComponent.Content?
             let videoControlButtonContent: VideoChatActionButtonComponent.Content
+            let videoControlButtonEnabled: Bool
             let messageButtonContent: VideoChatActionButtonComponent.Content?
 
             var buttonAudio: VideoChatActionButtonComponent.Content.Audio = .speaker
@@ -2653,13 +2653,16 @@ final class VideoChatScreenComponent: Component {
             if let callState = self.callState, let muteState = callState.muteState, !muteState.canUnmute {
                 videoButtonContent = nil
                 videoControlButtonContent = .audio(audio: buttonAudio, isEnabled: buttonIsEnabled)
+                videoControlButtonEnabled = buttonIsEnabled
             } else {
                 let isVideoActive = self.callState?.isMyVideoActive ?? false
                 videoButtonContent = .video(isActive: isVideoActive)
                 if isVideoActive {
                     videoControlButtonContent = .rotateCamera
+                    videoControlButtonEnabled = true
                 } else {
                     videoControlButtonContent = .audio(audio: buttonAudio, isEnabled: buttonIsEnabled)
+                    videoControlButtonEnabled = buttonIsEnabled
                 }
             }
             
@@ -3226,7 +3229,7 @@ final class VideoChatScreenComponent: Component {
                 transition.setPosition(view: microphoneButtonView, position: microphoneButtonFrame.center)
                 transition.setBounds(view: microphoneButtonView, bounds: CGRect(origin: CGPoint(), size: microphoneButtonFrame.size))
             }
-
+            
             let _ = self.speakerButton.update(
                 transition: transition,
                 component: AnyComponent(PlainButtonComponent(
@@ -3249,6 +3252,7 @@ final class VideoChatScreenComponent: Component {
                             self.onAudioRoutePressed()
                         }
                     },
+                    isEnabled: videoControlButtonEnabled,
                     animateAlpha: false
                 )),
                 environment: {},
@@ -4269,20 +4273,16 @@ private func hasFirstResponder(_ view: UIView) -> Bool {
     return false
 }
 
-func allowedStoryReactions(account: Account) -> Signal<[ReactionItem], NoError> {
-    let viewKey: PostboxViewKey = .orderedItemList(id: Namespaces.OrderedItemList.CloudTopReactions)
-    let topReactions = account.postbox.combinedView(keys: [viewKey])
-    |> map { views -> [RecentReactionItem] in
-        guard let view = views.views[viewKey] as? OrderedItemListView else {
-            return []
-        }
-        return view.items.compactMap { item -> RecentReactionItem? in
+func allowedStoryReactions(engine: TelegramEngine) -> Signal<[ReactionItem], NoError> {
+    let topReactions = engine.data.subscribe(TelegramEngine.EngineData.Item.OrderedLists.ListItems(collectionId: Namespaces.OrderedItemList.CloudTopReactions))
+    |> map { items -> [RecentReactionItem] in
+        return items.compactMap { item -> RecentReactionItem? in
             return item.contents.get(RecentReactionItem.self)
         }
     }
 
     return combineLatest(
-        TelegramEngine(account: account).stickers.availableReactions(),
+        engine.stickers.availableReactions(),
         topReactions
     )
     |> take(1)

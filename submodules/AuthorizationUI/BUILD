@@ -7,12 +7,11 @@ swift_library(
         "Sources/**/*.swift",
     ]),
     copts = [
-        
+        "-warnings-as-errors",
     ],
     deps = [
         "//submodules/AsyncDisplayKit:AsyncDisplayKit",
         "//submodules/TelegramCore:TelegramCore",
-        "//submodules/Postbox:Postbox",
         "//submodules/Display:Display",
         "//submodules/SSignalKit/SSignalKit",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
@@ -24,7 +23,6 @@ swift_library(
         "//submodules/PhoneNumberFormat:PhoneNumberFormat",
         "//submodules/LegacyComponents:LegacyComponents",
         "//submodules/LegacyMediaPickerUI:LegacyMediaPickerUI",
-        "//submodules/MolteagramCore",
         "//submodules/PasswordSetupUI:PasswordSetupUI",
         "//submodules/TelegramNotices:TelegramNotices",
         "//submodules/ProgressNavigationButtonNode:ProgressNavigationButtonNode",
@@ -50,6 +48,7 @@ swift_library(
         "//submodules/Utils/DeviceModel",
         "//submodules/PresentationDataUtils",
         "//third-party/ZipArchive:ZipArchive",
+        "//submodules/TelegramUI/Components/GlassBarButtonComponent",
     ],
     visibility = [
         "//visibility:public",

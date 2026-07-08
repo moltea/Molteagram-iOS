@@ -1,7 +1,6 @@
 import Foundation
 import UIKit
 import AsyncDisplayKit
-import Postbox
 import SwiftSignalKit
 import Display
 import TelegramCore
@@ -47,8 +46,8 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
         public let context: AccountContext
         public let presentationData: ChatPresentationData
         public let customTintColor: UIColor?
-        public let message: Message
-        public let topMessage: Message
+        public let message: EngineRawMessage
+        public let topMessage: EngineRawMessage
         public let associatedData: ChatMessageItemAssociatedData
         public let chatLocation: ChatLocation
         public let attributes: ChatMessageEntryAttributes
@@ -71,8 +70,8 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
             context: AccountContext,
             presentationData: ChatPresentationData,
             customTintColor: UIColor?,
-            message: Message,
-            topMessage: Message,
+            message: EngineRawMessage,
+            topMessage: EngineRawMessage,
             associatedData: ChatMessageItemAssociatedData,
             chatLocation: ChatLocation,
             attributes: ChatMessageEntryAttributes,
@@ -181,7 +180,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
     
     private let fetchControls = Atomic<FetchControls?>(value: nil)
     private var resourceStatus: FileMediaResourceStatus?
-    private var actualFetchStatus: MediaResourceStatus?
+    private var actualFetchStatus: EngineMediaResourceStatus?
     private let fetchDisposable = MetaDisposable()
     
     public var toggleSelection: (Bool) -> Void = { _ in }
@@ -192,7 +191,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
     public var updateTranscriptionExpanded: ((AudioTranscriptionButtonComponent.TranscriptionState) -> Void)?
     
     private var context: AccountContext?
-    private var message: Message?
+    private var message: EngineRawMessage?
     private var arguments: Arguments?
     private var presentationData: ChatPresentationData?
     private var file: TelegramMediaFile?
@@ -360,7 +359,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
         let presentationData = context.sharedContext.currentPresentationData.with { $0 }
         let premiumConfiguration = PremiumConfiguration.with(appConfiguration: arguments.context.currentAppConfiguration.with { $0 })
         
-        let transcriptionText = self.forcedAudioTranscriptionText ?? transcribedText(message: message)
+        let transcriptionText = self.forcedAudioTranscriptionText ?? transcribedText(message: EngineMessage(message))
         if transcriptionText == nil && !arguments.associatedData.alwaysDisplayTranscribeButton.providedByGroupBoost {
             if premiumConfiguration.audioTransciptionTrialCount > 0 {
                 if !arguments.associatedData.isPremium {
@@ -402,7 +401,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
         if case .expanded = self.audioTranscriptionState {
             shouldExpandNow = true
         } else {
-            if let result = transcribedText(message: message) {
+            if let result = transcribedText(message: EngineMessage(message)) {
                 shouldExpandNow = true
                 
                 if case let .success(_, isPending) = result {
@@ -445,7 +444,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                             return .single(nil)
                         }
                         return convertOpusToAAC(sourcePath: result, allocateTempFile: {
-                            return TempBox.shared.tempFile(fileName: "audio.m4a").path
+                            return EngineTempBox.shared.tempFile(fileName: "audio.m4a").path
                         })
                     }
                     |> mapToSignal { result -> Signal<LocallyTranscribedAudio?, NoError> in
@@ -581,7 +580,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                 let durationFont = Font.regular(floor(arguments.presentationData.fontSize.baseDisplaySize * 11.0 / 17.0))
                 
                 var updateImageSignal: Signal<(TransformImageArguments) -> DrawingContext?, NoError>?
-                var updatedStatusSignal: Signal<(FileMediaResourceStatus, MediaResourceStatus?), NoError>?
+                var updatedStatusSignal: Signal<(FileMediaResourceStatus, EngineMediaResourceStatus?), NoError>?
                 var updatedAudioLevelEventsSignal: Signal<Float, NoError>?
                 var updatedPlaybackStatusSignal: Signal<MediaPlayerStatus, NoError>?
                 var updatedFetchControls: FetchControls?
@@ -622,13 +621,13 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                 if statusUpdated {
                     if arguments.message.flags.isSending {
                         updatedStatusSignal = combineLatest(messageFileMediaResourceStatus(context: arguments.context, file: arguments.file, message: EngineMessage(arguments.message), isRecentActions: arguments.isRecentActions), messageMediaFileStatus(context: arguments.context, messageId: arguments.message.id, file: arguments.file))
-                        |> map { resourceStatus, actualFetchStatus -> (FileMediaResourceStatus, MediaResourceStatus?) in
+                        |> map { resourceStatus, actualFetchStatus -> (FileMediaResourceStatus, EngineMediaResourceStatus?) in
                             return (resourceStatus, actualFetchStatus)
                         }
                         updatedAudioLevelEventsSignal = messageFileMediaPlaybackAudioLevelEvents(context: arguments.context, file: arguments.file, message: EngineMessage(arguments.message), isRecentActions: arguments.isRecentActions, isGlobalSearch: false, isDownloadList: false, isSavedMusic: false)
                     } else {
                         updatedStatusSignal = messageFileMediaResourceStatus(context: arguments.context, file: arguments.file, message: EngineMessage(arguments.message), isRecentActions: arguments.isRecentActions)
-                        |> map { resourceStatus -> (FileMediaResourceStatus, MediaResourceStatus?) in
+                        |> map { resourceStatus -> (FileMediaResourceStatus, EngineMediaResourceStatus?) in
                             return (resourceStatus, nil)
                         }
                         updatedAudioLevelEventsSignal = messageFileMediaPlaybackAudioLevelEvents(context: arguments.context, file: arguments.file, message: EngineMessage(arguments.message), isRecentActions: arguments.isRecentActions, isGlobalSearch: false, isDownloadList: false, isSavedMusic: false)
@@ -789,7 +788,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                     }
                 }
                 
-                let transcribedText = forcedAudioTranscriptionText ?? transcribedText(message: arguments.message)
+                let transcribedText = forcedAudioTranscriptionText ?? transcribedText(message: EngineMessage(arguments.message))
                 
                 switch audioTranscriptionState {
                 case .inProgress:
@@ -934,9 +933,9 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                     } else {
                         dateFormat = .regular
                     }
-                    let dateText = stringForMessageTimestampStatus(accountPeerId: arguments.context.account.peerId, message: arguments.message, dateTimeFormat: arguments.presentationData.dateTimeFormat, nameDisplayOrder: arguments.presentationData.nameDisplayOrder, strings: arguments.presentationData.strings, format: dateFormat, associatedData: arguments.associatedData)
+                    let dateText = stringForMessageTimestampStatus(accountPeerId: arguments.context.account.peerId, message: EngineMessage(arguments.message), dateTimeFormat: arguments.presentationData.dateTimeFormat, nameDisplayOrder: arguments.presentationData.nameDisplayOrder, strings: arguments.presentationData.strings, format: dateFormat, associatedData: arguments.associatedData)
                     
-                    let displayReactionsInline = shouldDisplayInlineDateReactions(message: arguments.message, isPremium: arguments.associatedData.isPremium, forceInline: arguments.associatedData.forceInlineReactions)
+                    let displayReactionsInline = shouldDisplayInlineDateReactions(message: EngineMessage(arguments.message), isPremium: arguments.associatedData.isPremium, forceInline: arguments.associatedData.forceInlineReactions)
                     var reactionSettings: ChatMessageDateAndStatusNode.TrailingReactionSettings?
                     
                     if displayReactionsInline || arguments.displayReactions {
@@ -972,7 +971,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                         starsCount: starsCount,
                         isPinned: arguments.isPinned && !arguments.associatedData.isInPinnedListMode,
                         hasAutoremove: arguments.message.isSelfExpiring,
-                        canViewReactionList: canViewMessageReactionList(message: arguments.topMessage),
+                        canViewReactionList: canViewMessageReactionList(message: EngineMessage(arguments.topMessage)),
                         animationCache: arguments.controllerInteraction.presentationContext.animationCache,
                         animationRenderer: arguments.controllerInteraction.presentationContext.animationRenderer
                     ))
@@ -1429,7 +1428,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                             if var updatedStatusSignal = updatedStatusSignal {
                                 if strongSelf.file?.isInstantVideo == true {
                                     updatedStatusSignal = updatedStatusSignal
-                                    |> mapToThrottled { next -> Signal<(FileMediaResourceStatus, MediaResourceStatus?), NoError> in
+                                    |> mapToThrottled { next -> Signal<(FileMediaResourceStatus, EngineMediaResourceStatus?), NoError> in
                                         return .single(next) |> then(.complete() |> delay(0.1, queue: Queue.concurrentDefaultQueue()))
                                     }
                                 }
@@ -1654,7 +1653,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
         
         var playbackState: (position: Double, duration: Double, generationTimestamp: Double) = (0.0, 0.0, 0.0)
         if !isAudio {
-            var fetchStatus: MediaResourceStatus?
+            var fetchStatus: EngineMediaResourceStatus?
             if let actualFetchStatus = self.actualFetchStatus, message.forwardInfo != nil {
                 fetchStatus = actualFetchStatus
             } else if case let .fetchStatus(status) = resourceStatus.mediaStatus {
@@ -1817,7 +1816,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                         }
                     }
                     
-                    image = playerAlbumArt(postbox: context.account.postbox, engine: context.engine, fileReference: .message(message: MessageReference(message), media: file), albumArt: .init(thumbnailResource: ExternalMusicAlbumArtResource(file: .message(message: MessageReference(message), media: file), title: title ?? "", performer: performer ?? "", isThumbnail: true), fullSizeResource: ExternalMusicAlbumArtResource(file: .message(message: MessageReference(message), media: file), title: title ?? "", performer: performer ?? "", isThumbnail: false)), thumbnail: true, overlayColor: UIColor(white: 0.0, alpha: 0.3), drawPlaceholderWhenEmpty: false, attemptSynchronously: !animated)
+                    image = playerAlbumArt(engine: context.engine, fileReference: .message(message: MessageReference(message), media: file), albumArt: .init(thumbnailResource: ExternalMusicAlbumArtResource(file: .message(message: MessageReference(message), media: file), title: title ?? "", performer: performer ?? "", isThumbnail: true), fullSizeResource: ExternalMusicAlbumArtResource(file: .message(message: MessageReference(message), media: file), title: title ?? "", performer: performer ?? "", isThumbnail: false)), thumbnail: true, overlayColor: UIColor(white: 0.0, alpha: 0.3), drawPlaceholderWhenEmpty: false, attemptSynchronously: !animated)
                 }
             }
             let statusNode = SemanticStatusNode(backgroundNodeColor: backgroundNodeColor, foregroundNodeColor: foregroundNodeColor, image: image, overlayForegroundNodeColor: presentationData.theme.theme.chat.message.mediaOverlayControlColors.foregroundColor)
@@ -2083,7 +2082,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
         }
     }
     
-    public func transitionNode(media: Media) -> (ASDisplayNode, CGRect, () -> (UIView?, UIView?))? {
+    public func transitionNode(media: EngineRawMedia) -> (ASDisplayNode, CGRect, () -> (UIView?, UIView?))? {
         if let iconNode = self.iconNode, let file = self.file, file.isEqual(to: media) {
             return (iconNode, iconNode.bounds, { [weak iconNode] in
                 return (iconNode?.view.snapshotContentTree(unhide: true), nil)
@@ -2093,7 +2092,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
         }
     }
     
-    public func updateHiddenMedia(_ media: [Media]?) -> Bool {
+    public func updateHiddenMedia(_ media: [EngineRawMedia]?) -> Bool {
         var isHidden = false
         if let file = self.file, let media = media {
             for m in media {

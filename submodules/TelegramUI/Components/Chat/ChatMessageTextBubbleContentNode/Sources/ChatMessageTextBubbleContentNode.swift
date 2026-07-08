@@ -4,7 +4,6 @@ import UIKit
 import AsyncDisplayKit
 import Display
 import TelegramCore
-import Postbox
 import TextFormat
 import UrlEscaping
 import TelegramUniversalVideoContent
@@ -27,6 +26,8 @@ import ChatMessageItemCommon
 import TextLoadingEffect
 import ChatControllerInteraction
 import InteractiveTextComponent
+import ShimmeringMask
+import StreamingTextReveal
 
 private final class CachedChatMessageText {
     let text: String
@@ -88,7 +89,7 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
     
     private let containerNode: ContainerNode
     private let textNode: InteractiveTextNodeWithEntities
-    
+
     private let textAccessibilityOverlayNode: TextAccessibilityOverlayNode
     public var statusNode: ChatMessageDateAndStatusNode?
     private var linkHighlightingNode: LinkHighlightingNode?
@@ -118,35 +119,9 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
     private var displayContentsUnderSpoilers: (value: Bool, location: CGPoint?) = (false, nil)
     
     private var isSummaryApplied = false
-    
-    private final class TextRevealAnimationState {
-        let fromCount: Int
-        let toCount: Int
-        let startTimestamp: Double
-        let duration: Double
-        
-        init(fromCount: Int, toCount: Int, startTimestamp: Double, duration: Double) {
-            self.fromCount = fromCount
-            self.toCount = toCount
-            self.startTimestamp = startTimestamp
-            self.duration = duration
-        }
-        
-        func fraction(timestamp: Double) -> CGFloat {
-            var animationFraction = (timestamp - self.startTimestamp) / self.duration
-            animationFraction = max(0.0, min(1.0, animationFraction))
-            return animationFraction
-        }
-        
-        func glyphCount(timestamp: Double) -> Int {
-            let animationFraction = self.fraction(timestamp: timestamp)
-            let glyphCount = (1.0 - animationFraction) * Double(self.fromCount) + animationFraction * Double(self.toCount)
-            return Int(glyphCount)
-        }
-    }
-    
+
     private var textRevealLink: SharedDisplayLinkDriver.Link?
-    private var textRevealAnimationState: TextRevealAnimationState?
+    private var textRevealController: TextRevealController?
     
     private var relativeDateTimer: (timer: SwiftSignalKit.Timer, period: Int32)?
     
@@ -198,7 +173,7 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
             } else {
                 self.expandedBlockIds.insert(blockId)
             }
-            item.controllerInteraction.requestMessageUpdate(item.message.id, false)
+            item.controllerInteraction.requestMessageUpdate(item.message.id, false, nil)
         }
         self.textNode.textNode.requestDisplayContentsUnderSpoilers = { [weak self] location in
             guard let self else {
@@ -247,12 +222,7 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
         let currentCachedChatMessageText = self.cachedChatMessageText
         let expandedBlockIds = self.expandedBlockIds
         let displayContentsUnderSpoilers = self.displayContentsUnderSpoilers
-        let currentMaxGlyphCount: Int?
-        if let textRevealAnimationState = self.textRevealAnimationState {
-            currentMaxGlyphCount = textRevealAnimationState.glyphCount(timestamp: CACurrentMediaTime())
-        } else {
-            currentMaxGlyphCount = nil
-        }
+        let currentMaxGlyphCount: Int? = self.textRevealController?.currentGlyphCount
         let previousGlyphCount = self.textNode.textNode.cachedLayout?.attributedString?.length ?? 0
         
         return { item, layoutConstants, _, _, _, _ in
@@ -343,7 +313,7 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                 } else {
                     dateFormat = .regular
                 }
-                let dateText = stringForMessageTimestampStatus(accountPeerId: item.context.account.peerId, message: item.message, dateTimeFormat: item.presentationData.dateTimeFormat, nameDisplayOrder: item.presentationData.nameDisplayOrder, strings: item.presentationData.strings, format: dateFormat, associatedData: item.associatedData)
+                let dateText = stringForMessageTimestampStatus(accountPeerId: item.context.account.peerId, message: EngineMessage(item.message), dateTimeFormat: item.presentationData.dateTimeFormat, nameDisplayOrder: item.presentationData.nameDisplayOrder, strings: item.presentationData.strings, format: dateFormat, associatedData: item.associatedData)
                 
                 let statusType: ChatMessageDateAndStatusType?
                 var displayStatus = false
@@ -658,7 +628,7 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                         
                         let currentDict = updatedString.attributes(at: range.lowerBound, effectiveRange: nil)
                         var updatedAttributes: [NSAttributedString.Key: Any] = currentDict
-                        updatedAttributes[ChatTextInputAttributes.customEmoji] = ChatTextInputTextCustomEmojiAttribute(interactivelySelectedFromPackId: nil, fileId: fileId, file: item.message.associatedMedia[MediaId(namespace: Namespaces.Media.CloudFile, id: fileId)] as? TelegramMediaFile)
+                        updatedAttributes[ChatTextInputAttributes.customEmoji] = ChatTextInputTextCustomEmojiAttribute(interactivelySelectedFromPackId: nil, fileId: fileId, file: item.message.associatedMedia[EngineMedia.Id(namespace: Namespaces.Media.CloudFile, id: fileId)] as? TelegramMediaFile)
                         
                         let insertString = NSAttributedString(string: updatedString.attributedSubstring(from: range).string, attributes: updatedAttributes)
                         updatedString.replaceCharacters(in: range, with: insertString)
@@ -725,8 +695,7 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                     displayContentsUnderSpoilers: displayContentsUnderSpoilers.value,
                     customTruncationToken: customTruncationToken,
                     expandedBlocks: expandedBlockIds,
-                    computeCharacterRects: true,
-                    minWidth: (attributedText.string.isEmpty && hasDraft) ? 40.0 : nil
+                    computeCharacterRects: true
                 ))
                 
                 var maxGlyphCount = currentMaxGlyphCount
@@ -759,7 +728,7 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                     }
                     
                     let dateLayoutInput: ChatMessageDateAndStatusNode.LayoutInput
-                    dateLayoutInput = .trailingContent(contentWidth: trailingWidthToMeasure, reactionSettings: ChatMessageDateAndStatusNode.TrailingReactionSettings(displayInline: shouldDisplayInlineDateReactions(message: item.message, isPremium: item.associatedData.isPremium, forceInline: item.associatedData.forceInlineReactions), preferAdditionalInset: false))
+                    dateLayoutInput = .trailingContent(contentWidth: trailingWidthToMeasure, reactionSettings: ChatMessageDateAndStatusNode.TrailingReactionSettings(displayInline: shouldDisplayInlineDateReactions(message: EngineMessage(item.message), isPremium: item.associatedData.isPremium, forceInline: item.associatedData.forceInlineReactions), preferAdditionalInset: false))
                     
                     statusSuggestedWidthAndContinue = statusLayout(ChatMessageDateAndStatusNode.Arguments(
                         context: item.context,
@@ -783,14 +752,14 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                         starsCount: starsCount,
                         isPinned: item.message.tags.contains(.pinned) && (!item.associatedData.isInPinnedListMode || isReplyThread),
                         hasAutoremove: item.message.isSelfExpiring,
-                        canViewReactionList: canViewMessageReactionList(message: item.topMessage),
+                        canViewReactionList: canViewMessageReactionList(message: EngineMessage(item.topMessage)),
                         animationCache: item.controllerInteraction.presentationContext.animationCache,
                         animationRenderer: item.controllerInteraction.presentationContext.animationRenderer
                     ))
                 }
                 
                 var textFrame = CGRect(origin: CGPoint(x: -textInsets.left, y: -textInsets.top), size: textLayout.size)
-                
+
                 var textFrameWithoutInsets = CGRect(origin: CGPoint(x: textFrame.origin.x + textInsets.left, y: textFrame.origin.y + textInsets.top), size: CGSize(width: textFrame.width - textInsets.left - textInsets.right, height: textFrame.height - textInsets.top - textInsets.bottom))
                 
                 textFrame = textFrame.offsetBy(dx: layoutConstants.text.bubbleInsets.left, dy: topInset)
@@ -819,7 +788,7 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                     if let statusSizeAndApply = statusSizeAndApply, !hasDraft {
                         boundingSize.height += statusSizeAndApply.0.height
                     }
-                    
+
                     boundingSize.width += layoutConstants.text.bubbleInsets.left + layoutConstants.text.bubbleInsets.right
                     
                     boundingSize.height += topInset + bottomInset
@@ -837,8 +806,8 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                             }
                             
                             strongSelf.textNode.textNode.displaysAsynchronously = !item.presentationData.isPreview
-                            animation.animator.updateFrame(layer: strongSelf.containerNode.layer, frame: CGRect(origin: CGPoint(), size: boundingSize), completion: nil)
-                            
+                            animation.animator.updatePosition(layer: strongSelf.containerNode.layer, position: CGRect(origin: CGPoint(), size: boundingSize).center, completion: nil)
+                            animation.animator.updateBounds(layer: strongSelf.containerNode.layer, bounds: CGRect(origin: CGPoint(), size: boundingSize), completion: nil)
                             
                             if let formattedDateUpdatePeriod {
                                 if strongSelf.relativeDateTimer?.period != formattedDateUpdatePeriod {
@@ -846,7 +815,7 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                                     strongSelf.relativeDateTimer = nil
                                 }
                                 strongSelf.relativeDateTimer = (SwiftSignalKit.Timer(timeout: Double(formattedDateUpdatePeriod), repeat: true, completion: { [weak self] in
-                                    self?.requestFullUpdate?()
+                                    self?.requestFullUpdate?(ControlledTransition(duration: 0.15, curve: .easeInOut, interactive: false))
                                 }, queue: Queue.mainQueue()), formattedDateUpdatePeriod)
                                 strongSelf.relativeDateTimer?.timer.start()
                             } else if let (timer, _) = strongSelf.relativeDateTimer {
@@ -922,7 +891,9 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                                     }
                                 )
                             ))
-                            animation.animator.updateFrame(layer: strongSelf.textNode.textNode.layer, frame: realTextFrame, completion: nil)
+                            animation.animator.updatePosition(layer: strongSelf.textNode.textNode.layer, position: realTextFrame.center, completion: nil)
+                            animation.animator.updateBounds(layer: strongSelf.textNode.textNode.layer, bounds: CGRect(origin: CGPoint(), size: realTextFrame.size), completion: nil)
+                            
                             
                             switch strongSelf.visibility {
                             case .none:
@@ -976,7 +947,8 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                                     }
                                     statusNode.frame = statusFrame
                                 } else {
-                                    animation.animator.updateFrame(layer: statusNode.layer, frame: statusFrame, completion: nil)
+                                    animation.animator.updatePosition(layer: statusNode.layer, position: statusFrame.center, completion: nil)
+                                    animation.animator.updateBounds(layer: statusNode.layer, bounds: CGRect(origin: CGPoint(), size: statusFrame.size), completion: nil)
                                 }
                             } else if let statusNode = strongSelf.statusNode {
                                 strongSelf.statusNode = nil
@@ -1058,14 +1030,14 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                                 codeHighlightState.disposable.dispose()
                             }
                             
-                            if previousAnimateGlyphCount != nil || strongSelf.textRevealAnimationState != nil || hasDraft || hadDraft {
+                            if previousAnimateGlyphCount != nil || strongSelf.textRevealController != nil || hasDraft || hadDraft {
                                 if strongSelf.textNode.textNode.revealCharacterCount == nil {
                                     if hasDraft {
                                         strongSelf.statusNode?.alpha = 0.0
                                     }
                                     strongSelf.textNode.textNode.updateRevealCharacterCount(count: previousAnimateGlyphCount ?? 0, animated: false)
                                 }
-                                strongSelf.updateTextRevealAnimation(previousGlyphCount: previousAnimateGlyphCount ?? 0)
+                                strongSelf.updateTextRevealAnimation(previousGlyphCount: previousAnimateGlyphCount ?? 0, hasDraft: hasDraft, hadDraft: hadDraft)
                             }
                         }
                     })
@@ -1074,75 +1046,77 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
         }
     }
     
-    private func updateTextRevealAnimation(previousGlyphCount: Int) {
-        var fromCount = previousGlyphCount
+    private func updateTextRevealAnimation(previousGlyphCount: Int, hasDraft: Bool, hadDraft: Bool) {
         let toCount = self.textNode.textNode.cachedLayout?.attributedString?.length ?? 0
-        let timestamp = CACurrentMediaTime()
-        if let textRevealAnimationState = self.textRevealAnimationState {
-            if textRevealAnimationState.toCount == toCount {
-                return
-            }
-            fromCount = textRevealAnimationState.glyphCount(timestamp: timestamp)
+        let now = CACurrentMediaTime()
+
+        if hasDraft, let controller = self.textRevealController, controller.isFinalizing {
+            self.textRevealController = nil
+            self.textRevealLink = nil
         }
-        if fromCount == toCount {
-            if self.textRevealAnimationState != nil {
-                self.textRevealAnimationState = nil
-                self.textRevealLink = nil
-                self.textNode.textNode.updateRevealCharacterCount(count: nil, animated: false)
-            }
+
+        if self.textRevealController == nil && (hasDraft || hadDraft) {
+            self.textRevealController = TextRevealController(initialRevealedCount: previousGlyphCount, initialLength: toCount)
+        }
+
+        guard let controller = self.textRevealController else {
             return
         }
-        
-        var duration: Double = Double(toCount - fromCount) / 40.0
-        duration = max(0.1, min(duration, 1.0))
-        
-        self.textRevealAnimationState = TextRevealAnimationState(
-            fromCount: fromCount,
-            toCount: toCount,
-            startTimestamp: timestamp,
-            duration: duration
-        )
-        if self.textRevealLink == nil, self.textRevealAnimationState != nil {
+
+        if hasDraft {
+            controller.observeUpdate(latestLength: toCount, at: now)
+        } else if hadDraft {
+            controller.finalize(finalLength: toCount)
+        }
+
+        if controller.isFinalizing && controller.revealedCount >= Double(controller.latestLength) {
+            self.textRevealController = nil
+            self.textRevealLink = nil
+            self.textNode.textNode.updateRevealCharacterCount(count: nil, animated: false)
+            return
+        }
+
+        if self.textRevealLink == nil {
             self.textRevealLink = SharedDisplayLinkDriver.shared.add { [weak self] _ in
-                guard let self, let item = self.item else {
+                guard let self else {
                     return
                 }
-                guard let textRevealAnimationState = self.textRevealAnimationState else {
+                guard let item = self.item else {
+                    self.textRevealController = nil
                     self.textRevealLink = nil
                     return
                 }
-                let timestamp = CACurrentMediaTime()
-                if textRevealAnimationState.fraction(timestamp: timestamp) >= 1.0 {
-                    self.textRevealAnimationState = nil
+                guard let controller = self.textRevealController else {
                     self.textRevealLink = nil
-                    
+                    return
+                }
+                let now = CACurrentMediaTime()
+                let (revealedGlyphCount, isComplete) = controller.tick(now: now)
+                if isComplete {
+                    self.textRevealController = nil
+                    self.textRevealLink = nil
+
                     self.textNode.textNode.updateRevealCharacterCount(count: nil, animated: false)
-                    
+
                     if let statusNode = self.statusNode, !item.message.attributes.contains(where: { $0 is TypingDraftMessageAttribute }) {
                         ContainedViewLayoutTransition.animated(duration: 0.2, curve: .easeInOut).updateAlpha(node: statusNode, alpha: 1.0)
                     }
-                    
-                    self.requestFullUpdate?()
+
+                    self.requestFullUpdate?(ControlledTransition(duration: 0.15, curve: .easeInOut, interactive: false))
                 } else {
                     var requestUpdate = false
-                    let glyphCount = textRevealAnimationState.glyphCount(timestamp: timestamp)
-                    if let previousRevealGlyphCount = self.textNode.textNode.revealCharacterCount, previousRevealGlyphCount != glyphCount {
+                    if let previousRevealGlyphCount = self.textNode.textNode.revealCharacterCount, previousRevealGlyphCount != revealedGlyphCount {
                         if let cachedLayout = self.textNode.textNode.cachedLayout {
-                            if cachedLayout.sizeForCharacterCount(characterCount: previousRevealGlyphCount) != cachedLayout.sizeForCharacterCount(characterCount: glyphCount) {
+                            if cachedLayout.sizeForCharacterCount(characterCount: previousRevealGlyphCount) != cachedLayout.sizeForCharacterCount(characterCount: revealedGlyphCount) {
                                 requestUpdate = true
                             }
                         } else {
                             requestUpdate = true
                         }
-                        if requestUpdate {
-                            //print("glyphCount: request update")
-                        }
-                        
-                        self.textNode.textNode.updateRevealCharacterCount(count: glyphCount, animated: true)
+                        self.textNode.textNode.updateRevealCharacterCount(count: revealedGlyphCount, animated: true)
                     }
-                    
                     if requestUpdate {
-                        self.requestFullUpdate?()
+                        self.requestFullUpdate?(ControlledTransition(duration: 0.15, curve: .easeInOut, interactive: false))
                     }
                 }
             }
@@ -1422,7 +1396,7 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
         }
     }
     
-    override public func updateSearchTextHighlightState(text: String?, messages: [MessageIndex]?) {
+    override public func updateSearchTextHighlightState(text: String?, messages: [EngineMessage.Index]?) {
         guard let item = self.item else {
             return
         }
@@ -1742,7 +1716,7 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
         }
         self.displayContentsUnderSpoilers = (value, location)
         if let item = self.item {
-            item.controllerInteraction.requestMessageUpdate(item.message.id, false)
+            item.controllerInteraction.requestMessageUpdate(item.message.id, false, nil)
         }
     }
     

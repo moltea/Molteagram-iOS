@@ -1,7 +1,6 @@
 import Foundation
 import UIKit
 import AsyncDisplayKit
-import Postbox
 import TelegramCore
 import Display
 import SwiftSignalKit
@@ -1514,6 +1513,6 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
     }
 }
 
-public func shouldDisplayInlineDateReactions(message: Message, isPremium: Bool, forceInline: Bool) -> Bool {
+public func shouldDisplayInlineDateReactions(message: EngineMessage, isPremium: Bool, forceInline: Bool) -> Bool {
     return false
 }

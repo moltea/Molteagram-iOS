@@ -14,7 +14,6 @@ swift_library(
         "//submodules/Molteagram",
         "//submodules/Display",
         "//submodules/SSignalKit/SwiftSignalKit",
-        "//submodules/Postbox",
         "//submodules/TelegramCore",
         "//submodules/TelegramPresentationData",
         "//submodules/AppBundle",
