@@ -437,6 +437,8 @@ private func synchronizeUnseenPersonalMentionsTag(postbox: Postbox, network: Net
                                             apiTopMessage = topMessage
                                             apiUnreadMentionsCount = unreadMentionsCount
 
+                                        case .dialogCommunity:
+                                            return .complete()
                                         case .dialogFolder:
                                             assertionFailure()
                                             return .complete()
@@ -483,6 +485,8 @@ private func synchronizeUnseenReactionsAndPollVotesTag(postbox: Postbox, network
                                             apiUnreadReactionsCount = unreadReactionsCount
                                             apiUnreadPollVoteCount = unreadPollVoteCount
 
+                                        case .dialogCommunity:
+                                            return .complete()
                                         case .dialogFolder:
                                             assertionFailure()
                                             return .complete()

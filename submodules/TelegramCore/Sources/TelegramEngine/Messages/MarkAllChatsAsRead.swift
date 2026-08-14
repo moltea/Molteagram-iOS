@@ -60,6 +60,8 @@ func _internal_markAllChatsAsRead(postbox: Postbox, network: Network, stateManag
                         } else {
                             assertionFailure()
                         }
+                    case .dialogPeerCommunity:
+                        break
                     case .dialogPeerFolder:
                         assertionFailure()
                 }

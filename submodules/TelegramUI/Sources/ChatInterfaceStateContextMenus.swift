@@ -31,6 +31,7 @@ import DebugSettingsUI
 import ChatPresentationInterfaceState
 import Pasteboard
 import BrowserUI
+import ChatRichTextEditorComposer
 import SettingsUI
 import TextNodeWithEntities
 import ChatControllerInteraction
@@ -367,6 +368,16 @@ func canReplyInChat(_ chatPresentationInterfaceState: ChatPresentationInterfaceS
         canReply = true
     }
     return canReply
+}
+
+private func canReplyToEphemeralMessage(_ message: EngineRawMessage) -> Bool {
+    if message.id.namespace != Namespaces.Message.EphemeralLocal {
+        return false
+    }
+    if !message.flags.contains(.Incoming) {
+        return false
+    }
+    return true
 }
 
 enum ChatMessageContextMenuActionColor {
@@ -742,11 +753,13 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
         }
     }
     
+    let hasEphemeralMessages = messages.contains { Namespaces.Message.allEphemeral.contains($0.id.namespace) }
     var canReply = canReplyInChat(chatPresentationInterfaceState, accountPeerId: context.account.peerId)
     var canPin = false
-    let canSelect = !isAction
+    let canSelect = !isAction && !hasEphemeralMessages
     
     let message = messages[0]
+    let isNonReplyableEphemeralMessage = Namespaces.Message.allEphemeral.contains(message.id.namespace) && !canReplyToEphemeralMessage(message)
     
     if case .peer = chatPresentationInterfaceState.chatLocation, let channel = chatPresentationInterfaceState.renderedPeer?.peer as? TelegramChannel, channel.isForumOrMonoForum {
         if message.threadId == nil {
@@ -754,7 +767,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
         }
     }
     
-    if Namespaces.Message.allNonRegular.contains(message.id.namespace) || message.id.peerId.isRepliesOrVerificationCodes {
+    if Namespaces.Message.allNonRegular.contains(message.id.namespace) || isNonReplyableEphemeralMessage || message.id.peerId.isRepliesOrVerificationCodes {
         canReply = false
         canPin = false
     } else if messages[0].flags.intersection([.Failed, .Unsent]).isEmpty {
@@ -798,7 +811,6 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
         }
         if !(peer is TelegramSecretChat) && messages[0].id.namespace != Namespaces.Message.Cloud {
             canPin = false
-            canReply = false
         }
     }
     
@@ -1292,10 +1304,22 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
         
         let message = messages[0]
         var richMessageMarkdown: String?
+        var richMessageInstantPage: InstantPage?
+        var activeTranslateToLang: String?
+        if let translationState = chatPresentationInterfaceState.translationState, translationState.isEnabled {
+            activeTranslateToLang = translationState.toLang
+        }
         if let richTextAttribute = message.attributes.first(where: { $0 is RichTextMessageAttribute }) as? RichTextMessageAttribute {
-            let markdown = markdownStringFromInstantPage(richTextAttribute.instantPage)
+            let instantPage: InstantPage
+            if let activeTranslateToLang, let translation = message.attributes.first(where: { ($0 as? TranslationMessageAttribute)?.toLang == activeTranslateToLang }) as? TranslationMessageAttribute, let translatedInstantPage = translation.instantPage {
+                instantPage = translatedInstantPage
+            } else {
+                instantPage = richTextAttribute.instantPage
+            }
+            let markdown = markdownStringFromInstantPage(instantPage)
             if !markdown.isEmpty {
                 richMessageMarkdown = markdown
+                richMessageInstantPage = instantPage
             }
         }
         var isExpired = false
@@ -1321,8 +1345,11 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                                 UIPasteboard.general.string = diceEmoji
                             } else {
                                 let copyTextWithEntities = {
-                                    if let richMessageMarkdown {
-                                        storeMessageTextInPasteboard(richMessageMarkdown, entities: nil)
+                                    if let richMessageInstantPage {
+                                        // Copy a rich message in the new WYSIWYG-editor clipboard formats
+                                        // (fragment + RTF + plain) so it pastes into the composer with full
+                                        // structure and cross-app as RTF — not raw markdown text.
+                                        UIPasteboard.general.items = [richMessagePasteboardItem(fromInstantPage: richMessageInstantPage)]
                                         Queue.mainQueue().after(0.2, {
                                             let content: UndoOverlayContent = .copy(text: chatPresentationInterfaceState.strings.Conversation_MessageCopied)
                                             controllerInteraction.displayUndo(content)
@@ -1407,6 +1434,8 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                 
                 var showTranslateIfTopical = false
                 if let peer = chatPresentationInterfaceState.renderedPeer?.chatMainPeer as? TelegramChannel, !(peer.addressName ?? "").isEmpty {
+                    showTranslateIfTopical = true
+                } else if let message = messages.first, let peer = message.forwardInfo?.source as? TelegramChannel, !(peer.addressName ?? "").isEmpty {
                     showTranslateIfTopical = true
                 }
                 
@@ -2100,6 +2129,16 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             }
         }
 
+        if hasEphemeralMessages {
+            if !actions.isEmpty {
+                actions.append(.separator)
+            }
+            let noAction: ((ContextMenuActionItem.Action) -> Void)? = nil
+            actions.append(.action(ContextMenuActionItem(text: "Only you see this message. It will disappear after you log in again.", textLayout: .multiline, textFont: .small, icon: { _ in
+                return nil
+            }, action: noAction)))
+        }
+
         if !isPinnedMessages, !isReplyThreadHead, data.canSelect {
             var didAddSeparator = false
             if !selectAll || messages.count == 1 {
@@ -2645,7 +2684,13 @@ func chatAvailableMessageActionsImpl(engine: TelegramEngine, accountPeerId: Engi
                         }
                     }
                 }
-                if id.namespace == Namespaces.Message.ScheduledCloud {
+                if id.namespace == Namespaces.Message.EphemeralLocal {
+                    optionsMap[id]!.insert(.deleteLocally)
+                    if message.flags.contains(.Incoming), message.attributes.contains(where: { $0 is EphemeralMessageAttribute }) {
+                        optionsMap[id]!.insert(.report)
+                    }
+                    continue
+                } else if id.namespace == Namespaces.Message.ScheduledCloud {
                     optionsMap[id]!.insert(.sendScheduledNow)
                     if message.pendingProcessingAttribute == nil {
                         if canEditMessage(accountPeerId: accountPeerId, limitsConfiguration: limitsConfiguration, message: message, reschedule: true) {
@@ -3369,13 +3414,17 @@ private final class ChatReadReportContextItemNode: ASDisplayNode, ContextMenuCus
 
         self.iconNode = ASImageNode()
         if self.item.isEdit {
-            self.iconNode.image = generateTintedImage(image: UIImage(bundleImageName: "Chat/Message/MenuEditIcon"), color: presentationData.theme.actionSheet.primaryTextColor)
+            if let useEditedTimestamp = self.item.context.getAppConfigValue("message_primary_edited_date") as? Bool, useEditedTimestamp {
+                self.iconNode.image = generateScaledImage(image: generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Time"), color: presentationData.theme.contextMenu.primaryColor), size: CGSize(width: 20.0, height: 20.0), opaque: false)
+            } else {
+                self.iconNode.image = generateTintedImage(image: UIImage(bundleImageName: "Chat/Message/MenuEditIcon"), color: presentationData.theme.contextMenu.primaryColor)
+            }
         } else if self.item.message.id.peerId.namespace == Namespaces.Peer.CloudUser {
-            self.iconNode.image = generateTintedImage(image: UIImage(bundleImageName: "Chat/Message/MenuReadIcon"), color: presentationData.theme.actionSheet.primaryTextColor)
+            self.iconNode.image = generateTintedImage(image: UIImage(bundleImageName: "Chat/Message/MenuReadIcon"), color: presentationData.theme.contextMenu.primaryColor)
         } else if let reactionsAttribute = item.message.reactionsAttribute, !reactionsAttribute.reactions.isEmpty {
-            self.iconNode.image = generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Reactions"), color: presentationData.theme.actionSheet.primaryTextColor)
+            self.iconNode.image = generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Reactions"), color: presentationData.theme.contextMenu.primaryColor)
         } else {
-            self.iconNode.image = generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Read"), color: presentationData.theme.actionSheet.primaryTextColor)
+            self.iconNode.image = generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Read"), color: presentationData.theme.contextMenu.primaryColor)
         }
 
         self.avatarsNode = AnimatedAvatarSetNode()
@@ -3543,21 +3592,39 @@ private final class ChatReadReportContextItemNode: ASDisplayNode, ContextMenuCus
             reactionCount = currentStats.reactionCount
             
             if currentStats.peers.isEmpty {
-                if self.item.isEdit, let attribute = self.item.message.attributes.first(where: { $0 is EditedMessageAttribute }) as? EditedMessageAttribute, !attribute.isHidden, attribute.date != 0 {
-                    let dateText = humanReadableStringForTimestamp(strings: self.presentationData.strings, dateTimeFormat: self.presentationData.dateTimeFormat, timestamp: attribute.date, alwaysShowTime: true, allowYesterday: true, format: HumanReadableStringFormat(
-                        dateFormatString: { value in
-                            return PresentationStrings.FormattedString(string: self.presentationData.strings.Chat_PrivateMessageEditTimestamp_Date(value).string, ranges: [])
-                        },
-                        tomorrowFormatString: { value in
-                            return PresentationStrings.FormattedString(string: self.presentationData.strings.Chat_PrivateMessageEditTimestamp_TodayAt(value).string, ranges: [])
-                        },
-                        todayFormatString: { value in
-                            return PresentationStrings.FormattedString(string: self.presentationData.strings.Chat_PrivateMessageEditTimestamp_TodayAt(value).string, ranges: [])
-                        },
-                        yesterdayFormatString: { value in
-                            return PresentationStrings.FormattedString(string: self.presentationData.strings.Chat_PrivateMessageEditTimestamp_YesterdayAt(value).string, ranges: [])
-                        }
-                    )).string
+                if self.item.isEdit, let editedTime = self.item.message.editedTime, editedTime != 0 {
+                    let dateText: String
+                    if let useEditedTimestamp = self.item.context.getAppConfigValue("message_primary_edited_date") as? Bool, useEditedTimestamp {
+                        dateText = humanReadableStringForTimestamp(strings: self.presentationData.strings, dateTimeFormat: self.presentationData.dateTimeFormat, timestamp: self.item.message.timestamp, alwaysShowTime: true, allowYesterday: true, format: HumanReadableStringFormat(
+                            dateFormatString: { value in
+                                return PresentationStrings.FormattedString(string: self.presentationData.strings.Chat_PrivateMessageSentTimestamp_Date(value).string, ranges: [])
+                            },
+                            tomorrowFormatString: { value in
+                                return PresentationStrings.FormattedString(string: self.presentationData.strings.Chat_PrivateMessageSentTimestamp_TodayAt(value).string, ranges: [])
+                            },
+                            todayFormatString: { value in
+                                return PresentationStrings.FormattedString(string: self.presentationData.strings.Chat_PrivateMessageSentTimestamp_TodayAt(value).string, ranges: [])
+                            },
+                            yesterdayFormatString: { value in
+                                return PresentationStrings.FormattedString(string: self.presentationData.strings.Chat_PrivateMessageSentTimestamp_YesterdayAt(value).string, ranges: [])
+                            }
+                        )).string
+                    } else {
+                        dateText = humanReadableStringForTimestamp(strings: self.presentationData.strings, dateTimeFormat: self.presentationData.dateTimeFormat, timestamp: editedTime, alwaysShowTime: true, allowYesterday: true, format: HumanReadableStringFormat(
+                            dateFormatString: { value in
+                                return PresentationStrings.FormattedString(string: self.presentationData.strings.Chat_PrivateMessageEditTimestamp_Date(value).string, ranges: [])
+                            },
+                            tomorrowFormatString: { value in
+                                return PresentationStrings.FormattedString(string: self.presentationData.strings.Chat_PrivateMessageEditTimestamp_TodayAt(value).string, ranges: [])
+                            },
+                            todayFormatString: { value in
+                                return PresentationStrings.FormattedString(string: self.presentationData.strings.Chat_PrivateMessageEditTimestamp_TodayAt(value).string, ranges: [])
+                            },
+                            yesterdayFormatString: { value in
+                                return PresentationStrings.FormattedString(string: self.presentationData.strings.Chat_PrivateMessageEditTimestamp_YesterdayAt(value).string, ranges: [])
+                            }
+                        )).string
+                    }
                     
                     self.textNode.attributedText = NSAttributedString(string: dateText, font: Font.regular(floor(self.presentationData.listsFontSize.baseDisplaySize * 0.8)), textColor: self.presentationData.theme.contextMenu.primaryColor)
                 } else if self.item.message.id.peerId.namespace == Namespaces.Peer.CloudUser {

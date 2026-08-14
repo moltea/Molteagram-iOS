@@ -9,9 +9,6 @@ swift_library(
     copts = [
         
     ],
-    deps = [
-        "//submodules/Display:Display",
-    ],
     visibility = [
         "//visibility:public",
     ],

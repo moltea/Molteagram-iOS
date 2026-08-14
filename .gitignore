@@ -91,3 +91,4 @@ tools/sim-watcher/dist/
 
 # Personal code signing (certificates and provisioning profiles)
 /my-codesigning/
+.mcp.json
