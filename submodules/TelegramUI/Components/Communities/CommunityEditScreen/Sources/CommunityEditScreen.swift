@@ -138,7 +138,18 @@ private enum CommunityCreateAvatarSetup {
             }
         case let .videoFile(path):
             let asset = AVURLAsset(url: URL(fileURLWithPath: path))
-            exportSubject = .single((.video(asset: asset, isStory: false), asset.duration.seconds))
+            exportSubject = Signal { subscriber in
+                let task = Task {
+                    let duration = try? await asset.load(.duration)
+                    if !Task.isCancelled {
+                        subscriber.putNext((.video(asset: asset, isStory: false), duration?.seconds ?? 0.0))
+                        subscriber.putCompletion()
+                    }
+                }
+                return ActionDisposable {
+                    task.cancel()
+                }
+            }
         case let .asset(localIdentifier):
             exportSubject = Signal { subscriber in
                 let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
@@ -147,8 +158,11 @@ private enum CommunityCreateAvatarSetup {
                     if asset.mediaType == .video {
                         PHImageManager.default().requestAVAsset(forVideo: asset, options: nil) { avAsset, _, _ in
                             if let avAsset {
-                                subscriber.putNext((.video(asset: avAsset, isStory: true), avAsset.duration.seconds))
-                                subscriber.putCompletion()
+                                Task {
+                                    let duration = try? await avAsset.load(.duration)
+                                    subscriber.putNext((.video(asset: avAsset, isStory: true), duration?.seconds ?? 0.0))
+                                    subscriber.putCompletion()
+                                }
                             }
                         }
                     } else {
