@@ -94,6 +94,7 @@
 "Molteagram.SendAsRoundVideo" = "Round Video";
 "Molteagram.AudioSendAsFile" = "Send as File";
 "Molteagram.AudioSendAsVoice" = "Send as Voice";
+"Molteagram.AudioFile" = "Audio File";
 "Molteagram.AccountsImportButton" = "Import Accounts";
 "Molteagram.AccountsImportAction" = "Import";
 "Molteagram.AccountsDeselectAll" = "Deselect all";

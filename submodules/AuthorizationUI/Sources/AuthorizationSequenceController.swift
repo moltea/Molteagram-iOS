@@ -6,7 +6,6 @@ import TelegramCore
 import SwiftSignalKit
 import MtProtoKit
 import MessageUI
-import CoreTelephony
 import TelegramPresentationData
 import PresentationDataUtils
 import TextFormat
@@ -244,8 +243,7 @@ public final class AuthorizationSequenceController: NavigationController, ASAuth
                                             let appVersion = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "unknown"
                                             let systemVersion = UIDevice.current.systemVersion
                                             let locale = Locale.current.identifier
-                                            let carrier = CTCarrier()
-                                            let mnc = carrier.mobileNetworkCode ?? "none"
+                                            let mnc = "none"
                                             
                                             AuthorizationSequenceController.presentEmailComposeController(sharedContext: strongSelf.sharedContext, address: "recover@telegram.org", subject: strongSelf.presentationData.strings.Login_InvalidPhoneEmailSubject(formattedNumber).string, body: strongSelf.presentationData.strings.Login_InvalidPhoneEmailBody(formattedNumber, appVersion, systemVersion, locale, mnc).string, from: controller, presentationData: strongSelf.presentationData)
                                         }))
@@ -270,8 +268,7 @@ public final class AuthorizationSequenceController: NavigationController, ASAuth
                                             let appVersion = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "unknown"
                                             let systemVersion = UIDevice.current.systemVersion
                                             let locale = Locale.current.identifier
-                                            let carrier = CTCarrier()
-                                            let mnc = carrier.mobileNetworkCode ?? "none"
+                                            let mnc = "none"
                                             
                                             AuthorizationSequenceController.presentEmailComposeController(sharedContext: strongSelf.sharedContext, address: "recover@telegram.org", subject: strongSelf.presentationData.strings.Login_PhoneBannedEmailSubject(formattedNumber).string, body: strongSelf.presentationData.strings.Login_PhoneBannedEmailBody(formattedNumber, appVersion, systemVersion, locale, mnc).string, from: controller, presentationData: strongSelf.presentationData)
                                         }))
@@ -286,8 +283,7 @@ public final class AuthorizationSequenceController: NavigationController, ASAuth
                                             let appVersion = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "unknown"
                                             let systemVersion = UIDevice.current.systemVersion
                                             let locale = Locale.current.identifier
-                                            let carrier = CTCarrier()
-                                            let mnc = carrier.mobileNetworkCode ?? "none"
+                                            let mnc = "none"
                                             let errorString: String
                                             if let (code, description) = info {
                                                 errorString = "\(code): \(description)"
@@ -641,8 +637,7 @@ public final class AuthorizationSequenceController: NavigationController, ASAuth
                 
                 if nextType == nil {
                     if let controller {
-                        let carrier = CTCarrier()
-                        let mnc = carrier.mobileNetworkCode ?? "none"
+                        let mnc = "none"
                         let _ = strongSelf.engine.auth.reportMissingCode(phoneNumber: number, phoneCodeHash: phoneCodeHash, mnc: mnc).start()
                         
                         AuthorizationSequenceController.presentDidNotGetCodeUI(sharedContext: strongSelf.sharedContext, controller: controller, presentationData: strongSelf.presentationData, phoneNumber: number, mnc: mnc)

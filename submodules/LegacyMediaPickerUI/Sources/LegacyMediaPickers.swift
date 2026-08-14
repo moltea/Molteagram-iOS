@@ -809,10 +809,12 @@ public func legacyAssetPickerEnqueueMessages(
                             }
                         case let .video(data, thumbnail, cover, adjustments, caption, asFile, asAnimation, isRound, stickers):
                             let effectiveAsFile = isRound ? false : asFile
+                            let sourceDimensions: CGSize
                             var finalDimensions: CGSize
                             var finalDuration: Double
                             switch data {
                                 case let .asset(asset):
+                                    sourceDimensions = asset.dimensions
                                     if let adjustments = adjustments {
                                         if adjustments.cropApplied(forAvatar: false) {
                                             finalDimensions = adjustments.cropRect.size
@@ -832,6 +834,7 @@ public func legacyAssetPickerEnqueueMessages(
                                         finalDuration = asset.videoDuration
                                     }
                                 case let .tempFile(_, dimensions, duration):
+                                    sourceDimensions = dimensions
                                     finalDimensions = dimensions
                                     finalDuration = duration
                             }
@@ -879,49 +882,56 @@ public func legacyAssetPickerEnqueueMessages(
                             } else if preset == TGMediaVideoConversionPresetCompressedDefault && defaultPreset != TGMediaVideoConversionPresetCompressedDefault {
                                 preset = defaultPreset
                             }
-                            if asAnimation {
-                                preset = TGMediaVideoConversionPresetAnimation
-                            }
                             if isRound {
                                 preset = TGMediaVideoConversionPresetVideoMessage
+                            } else if asAnimation {
+                                preset = TGMediaVideoConversionPresetAnimation
                             }
                             if !asAnimation {
                                 finalDimensions = TGMediaVideoConverter.dimensions(for: finalDimensions, adjustments: adjustments, preset: preset)
                             }
                             
                             var resourceAdjustments: VideoMediaResourceAdjustments?
+                            var adjustmentsDictionary: [AnyHashable: Any]?
                             if let adjustments = adjustments {
                                 if adjustments.trimApplied() {
                                     finalDuration = adjustments.trimEndValue - adjustments.trimStartValue
                                 }
-                                
-                                if let dict = adjustments.dictionary(), let data = try? NSKeyedArchiver.archivedData(withRootObject: dict, requiringSecureCoding: false) {
-                                    let adjustmentsData = EngineMemoryBuffer(data: data)
-                                    let digest = EngineMemoryBuffer(data: adjustmentsData.md5Digest())
-                                    resourceAdjustments = VideoMediaResourceAdjustments(data: adjustmentsData, digest: digest, isStory: false)
-                                }
+                                adjustmentsDictionary = adjustments.dictionary()
                             }
                             if isRound {
-                                var adjustmentsDictionary = adjustments?.dictionary() ?? [:]
-                                let originalDimensions = finalDimensions
-                                let side = min(finalDimensions.width, finalDimensions.height)
-                                adjustmentsDictionary["cropRect"] = NSValue(cgRect: CGRect(x: floor((finalDimensions.width - side) / 2.0), y: floor((finalDimensions.height - side) / 2.0), width: side, height: side))
-                                adjustmentsDictionary["originalSize"] = NSValue(cgSize: originalDimensions)
-                                adjustmentsDictionary["cropOrientation"] = NSNumber(value: UIImage.Orientation.up.rawValue)
-                                adjustmentsDictionary["cropMirrored"] = NSNumber(value: false)
-                                adjustmentsDictionary["sendAsGif"] = NSNumber(value: false)
-                                adjustmentsDictionary["preset"] = NSNumber(value: TGMediaVideoConversionPresetVideoMessage.rawValue)
-                                if finalDuration > 60.0 {
-                                    finalDuration = 60.0
-                                    adjustmentsDictionary["trimStartValue"] = NSNumber(value: 0.0)
-                                    adjustmentsDictionary["trimEndValue"] = NSNumber(value: finalDuration)
+                                let cropSide = min(sourceDimensions.width, sourceDimensions.height)
+                                let cropRect = CGRect(
+                                    x: floor((sourceDimensions.width - cropSide) / 2.0),
+                                    y: floor((sourceDimensions.height - cropSide) / 2.0),
+                                    width: cropSide,
+                                    height: cropSide
+                                )
+                                if adjustmentsDictionary == nil {
+                                    adjustmentsDictionary = [:]
                                 }
+                                adjustmentsDictionary?["originalSize"] = NSValue(cgSize: sourceDimensions)
+                                adjustmentsDictionary?["cropRect"] = NSValue(cgRect: cropRect)
+                                adjustmentsDictionary?["cropOrientation"] = NSNumber(value: UIImage.Orientation.up.rawValue)
+                                adjustmentsDictionary?["cropMirrored"] = NSNumber(value: false)
+                                adjustmentsDictionary?["sendAsGif"] = NSNumber(value: false)
+                                adjustmentsDictionary?["preset"] = NSNumber(value: TGMediaVideoConversionPresetVideoMessage.rawValue)
+                                if finalDuration > 60.0 {
+                                    let trimStart = adjustments?.trimStartValue ?? 0.0
+                                    adjustmentsDictionary?["trimStart"] = NSNumber(value: trimStart)
+                                    adjustmentsDictionary?["trimEnd"] = NSNumber(value: trimStart + 60.0)
+                                    finalDuration = 60.0
+                                }
+                                if let roundAdjustmentsDictionary = adjustmentsDictionary, let roundAdjustments = TGVideoEditAdjustments(dictionary: roundAdjustmentsDictionary) {
+                                    finalDimensions = TGMediaVideoConverter.dimensions(for: sourceDimensions, adjustments: roundAdjustments, preset: TGMediaVideoConversionPresetVideoMessage)
+                                }
+                            }
+                            if let adjustmentsDictionary {
                                 if let data = try? NSKeyedArchiver.archivedData(withRootObject: adjustmentsDictionary, requiringSecureCoding: false) {
                                     let adjustmentsData = EngineMemoryBuffer(data: data)
                                     let digest = EngineMemoryBuffer(data: adjustmentsData.md5Digest())
                                     resourceAdjustments = VideoMediaResourceAdjustments(data: adjustmentsData, digest: digest, isStory: false)
                                 }
-                                finalDimensions = TGMediaVideoConverter.dimensions(for: originalDimensions, adjustments: nil, preset: TGMediaVideoConversionPresetVideoMessage)
                             }
                             
                             let resource: TelegramMediaResource

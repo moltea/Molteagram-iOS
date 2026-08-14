@@ -1290,7 +1290,7 @@ public enum ChatCustomContentsKind: Equatable {
     case businessLinkSetup(link: TelegramBusinessChatLinks.Link)
     case hashTagSearch(publicPosts: Bool)
     case deletedMessages
-    case editedMessages(MessageId)
+    case editedMessages(EngineMessage.Id)
 }
 
 public protocol ChatCustomContentsProtocol: AnyObject {

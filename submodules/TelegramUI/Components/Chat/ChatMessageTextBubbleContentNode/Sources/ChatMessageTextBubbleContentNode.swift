@@ -4,6 +4,7 @@ import UIKit
 import AsyncDisplayKit
 import Display
 import TelegramCore
+import Postbox
 import TextFormat
 import UrlEscaping
 import TelegramUniversalVideoContent

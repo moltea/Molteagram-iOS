@@ -14,6 +14,7 @@ swift_library(
         "//submodules/Display",
         "//submodules/SSignalKit/SwiftSignalKit",
         "//submodules/TelegramCore",
+        "//submodules/Postbox",
         "//submodules/LiveLocationTimerNode",
         "//submodules/PhotoResources",
         "//submodules/MediaResources",

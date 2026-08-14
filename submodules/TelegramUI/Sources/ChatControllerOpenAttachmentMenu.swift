@@ -64,7 +64,21 @@ extension ChatControllerImpl {
         guard let file = mediaReference.media as? TelegramMediaFile else {
             return mediaReference
         }
-        return mediaReference.withUpdatedMedia(self.molteagramVoiceFile(from: file))
+        let resource = LocalFileMediaResource(fileId: Int64.random(in: Int64.min ... Int64.max), size: file.size)
+        self.context.account.postbox.mediaBox.copyResourceData(from: file.resource.id, to: resource.id, synchronous: true)
+        let voiceFile = self.molteagramVoiceFile(from: file)
+        let localVoiceFile = TelegramMediaFile(fileId: EngineMedia.Id(namespace: Namespaces.Media.LocalFile, id: Int64.random(in: Int64.min ... Int64.max)), partialReference: nil, resource: resource, previewRepresentations: voiceFile.previewRepresentations, videoThumbnails: voiceFile.videoThumbnails, videoCover: voiceFile.videoCover, immediateThumbnailData: voiceFile.immediateThumbnailData, mimeType: voiceFile.mimeType, size: voiceFile.size, attributes: voiceFile.attributes, alternativeRepresentations: [])
+        return .standalone(media: localVoiceFile)
+    }
+
+    private func molteagramVoiceMediaReferenceSignal(from mediaReference: AnyMediaReference) -> Signal<AnyMediaReference, NoError> {
+        return transformOutgoingMessageMedia(postbox: self.context.account.postbox, network: self.context.account.network, media: mediaReference, opportunistic: false)
+        |> map { [weak self] fetchedReference -> AnyMediaReference in
+            guard let self else {
+                return mediaReference
+            }
+            return self.molteagramVoiceMediaReference(from: fetchedReference ?? mediaReference)
+        }
     }
     
     private func presentMolteagramAudioSendMode(completion: @escaping (Bool) -> Void) {
@@ -600,36 +614,47 @@ extension ChatControllerImpl {
                                 guard let self else {
                                     return
                                 }
-                                let mediaReferences = sendAsVoice ? mediaReferences.map(self.molteagramVoiceMediaReference(from:)) : mediaReferences
-                                
-                            var messages: [EnqueueMessage] = []
-                            var groupingKey: Int64?
-                            if mediaReferences.count > 1 {
-                                groupingKey = Int64.random(in: .min ..< .max)
-                            }
-                            
-                            var attributes: [EngineMessage.Attribute] = []
-                            var text = ""
-                            if let caption {
-                                text = caption.string
-                                let entities = generateTextEntities(text, enabledTypes: .all, currentEntities: generateChatInputTextEntities(caption))
-                                if !entities.isEmpty {
-                                    attributes.append(TextEntitiesMessageAttribute(entities: entities))
+                                let sendMediaReferences: ([AnyMediaReference]) -> Void = { [weak self] mediaReferences in
+                                    guard let self else {
+                                        return
+                                    }
+                                    var messages: [EnqueueMessage] = []
+                                    var groupingKey: Int64?
+                                    if !sendAsVoice && mediaReferences.count > 1 {
+                                        groupingKey = Int64.random(in: .min ..< .max)
+                                    }
+
+                                    var attributes: [EngineMessage.Attribute] = []
+                                    var text = ""
+                                    if let caption {
+                                        text = caption.string
+                                        let entities = generateTextEntities(text, enabledTypes: .all, currentEntities: generateChatInputTextEntities(caption))
+                                        if !entities.isEmpty {
+                                            attributes.append(TextEntitiesMessageAttribute(entities: entities))
+                                        }
+                                    }
+
+                                    for mediaReference in mediaReferences {
+                                        if messages.count == 10 && !sendAsVoice {
+                                            groupingKey = Int64.random(in: .min ..< .max)
+                                        }
+                                        let isLast = mediaReference == mediaReferences.last
+                                        messages.append(.message(text: isLast ? text : "", attributes: isLast ? attributes : [], inlineStickers: [:], mediaReference: mediaReference, threadId: strongSelf.chatLocation.threadId, replyToMessageId: nil, replyToStoryId: nil, localGroupingKey: groupingKey, correlationId: nil, bubbleUpEmojiOrStickersets: []))
+                                    }
+                                    messages = self.transformEnqueueMessages(messages, silentPosting: silentPosting, scheduleTime: scheduleTime, repeatPeriod: nil, postpone: false)
+                                    self.presentPaidMessageAlertIfNeeded(completion: { [weak self] postpone in
+                                        self?.sendMessages(messages, media: true, postpone: postpone)
+                                    })
                                 }
-                            }
-                            
-                            for mediaReference in mediaReferences {
-                                if messages.count == 10 {
-                                    groupingKey = Int64.random(in: .min ..< .max)
-                                }
-                                let isLast = mediaReference == mediaReferences.last
                                 
-                                messages.append(.message(text: isLast ? text : "", attributes: isLast ? attributes : [], inlineStickers: [:], mediaReference: mediaReference, threadId: strongSelf.chatLocation.threadId, replyToMessageId: nil, replyToStoryId: nil, localGroupingKey: groupingKey, correlationId: nil, bubbleUpEmojiOrStickersets: []))
-                            }
-                            messages = self.transformEnqueueMessages(messages, silentPosting: silentPosting, scheduleTime: scheduleTime, repeatPeriod: nil, postpone: false)
-                            self.presentPaidMessageAlertIfNeeded(completion: { [weak self] postpone in
-                                self?.sendMessages(messages, media: true, postpone: postpone)
-                            })
+                                if sendAsVoice {
+                                    self.enqueueMediaMessageDisposable.set((combineLatest(mediaReferences.map(self.molteagramVoiceMediaReferenceSignal(from:)))
+                                    |> deliverOnMainQueue).startStrict(next: { convertedReferences in
+                                        sendMediaReferences(convertedReferences)
+                                    }))
+                                } else {
+                                    sendMediaReferences(mediaReferences)
+                                }
                             }
                         })
                         if let controller = controller as? AttachmentFileControllerImpl {
@@ -1581,6 +1606,8 @@ extension ChatControllerImpl {
                                     }
                                     if let audioMetadata = item.audioMetadata {
                                         attributes.append(.Audio(isVoice: audioSendAsVoice == true, duration: audioMetadata.duration, title: audioSendAsVoice == true ? nil : audioMetadata.title, performer: audioSendAsVoice == true ? nil : audioMetadata.performer, waveform: nil))
+                                    } else if audioSendAsVoice == true {
+                                        attributes.append(.Audio(isVoice: true, duration: 0, title: nil, performer: nil, waveform: nil))
                                     }
 
                                     let file = TelegramMediaFile(fileId: EngineMedia.Id(namespace: Namespaces.Media.LocalFile, id: fileId), partialReference: nil, resource: ICloudFileResource(urlData: item.urlData, thumbnail: false), previewRepresentations: previewRepresentations, videoThumbnails: [], immediateThumbnailData: nil, mimeType: mimeType, size: Int64(item.fileSize), attributes: attributes, alternativeRepresentations: [])
@@ -1633,6 +1660,12 @@ extension ChatControllerImpl {
                 actionSheet?.dismissAnimated()
                 if let strongSelf = self {
                     strongSelf.presentICloudFileGallery(editingMessage: editingMessage)
+                }
+            }),
+            ActionSheetButtonItem(title: MolteagramStrings.get("Molteagram.AudioFile", languageCode: self.presentationData.strings.primaryComponent.languageCode), action: { [weak self, weak actionSheet] in
+                actionSheet?.dismissAnimated()
+                if let strongSelf = self {
+                    strongSelf.presentICloudFileGallery(editingMessage: editingMessage, documentTypes: ["public.mp3", "public.mpeg-4-audio", "public.aac-audio", "org.xiph.flac"])
                 }
             })
         ]), ActionSheetItemGroup(items: [

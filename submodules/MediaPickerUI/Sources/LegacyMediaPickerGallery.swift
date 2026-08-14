@@ -368,12 +368,20 @@ func presentLegacyMediaPickerGallery(
                 |> take(1)
                 |> deliverOnMainQueue).start(next: { sendWhenOnlineAvailable in
                     var sendAsRoundVideo = false
+                    let markRoundVideoItem: (Any) -> Void = { item in
+                        if let item = item as? TGMediaEditableItem {
+                            editingContext?.setRoundVideo(true, for: item)
+                        }
+                        if let item = item as? TGMediaPickerGalleryFetchResultItem, let backingItem = item.backingItem as? TGMediaEditableItem {
+                            editingContext?.setRoundVideo(true, for: backingItem)
+                        }
+                    }
                     let markRoundVideoItemsIfNeeded = {
                         if sendAsRoundVideo {
                             var items = selectionContext.selectedItems() ?? []
                             items.append(item.asset as Any)
-                            for case let item as TGMediaEditableItem in items {
-                                editingContext?.setRoundVideo(true, for: item)
+                            for item in items {
+                                markRoundVideoItem(item)
                             }
                         }
                     }
@@ -425,13 +433,6 @@ func presentLegacyMediaPickerGallery(
                         }
                     }
 
-                    if let sourceView, let paintStickersContext, paintStickersContext.presentMediaPickerSendActionMenu?(sourceView, hasSilentPosting, sendWhenOnlineAvailable && effectiveHasSchedule, effectiveHasSchedule, reminder, hasTimer, sendSilently, sendWhenOnline, schedule, sendWithTimer) == true {
-                        let hapticFeedback = HapticFeedback()
-                        hapticFeedback.impact()
-                        return
-                    }
-
-                    let legacySheetController = LegacyController(presentation: .custom, theme: presentationData.theme, initialLayout: nil)
                     var hasRoundVideo = mediaPickerItemIsVideo(item.asset as Any)
                     if !hasRoundVideo {
                         for selectedItem in selectionContext.selectedItems() ?? [] {
@@ -441,6 +442,14 @@ func presentLegacyMediaPickerGallery(
                             }
                         }
                     }
+
+                    if !hasRoundVideo, let sourceView, let paintStickersContext, paintStickersContext.presentMediaPickerSendActionMenu?(sourceView, hasSilentPosting, sendWhenOnlineAvailable && effectiveHasSchedule, effectiveHasSchedule, reminder, hasTimer, sendSilently, sendWhenOnline, schedule, sendWithTimer) == true {
+                        let hapticFeedback = HapticFeedback()
+                        hapticFeedback.impact()
+                        return
+                    }
+
+                    let legacySheetController = LegacyController(presentation: .custom, theme: presentationData.theme, initialLayout: nil)
                     let lang = presentationData.strings.primaryComponent.languageCode
                     let sheetController = TGMediaPickerSendActionSheetController(context: legacyController.context, isDark: true, sendButtonFrame: model.interfaceView.doneButtonFrame, canSendSilently: hasSilentPosting, canSendWhenOnline: sendWhenOnlineAvailable && effectiveHasSchedule, canSchedule: effectiveHasSchedule, reminder: reminder, hasTimer: hasTimer, hasRoundVideo: hasRoundVideo, roundVideoTitle: MolteagramStrings.get("Molteagram.SendAsRoundVideo", languageCode: lang))
                     sheetController.send = {

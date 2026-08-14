@@ -9,13 +9,13 @@ private let kMolteagramEditedTag = LocalMessageTags(rawValue: 1 << 4)
 private final class MolteagramEditedMessagesChatContentsImpl {
     let queue: Queue
     private let context: AccountContext
-    private let originalMessageId: MessageId
+    private let originalMessageId: EngineMessage.Id
 
     private(set) var currentView: MessageHistoryView?
     let historyViewPipe = ValuePipe<(MessageHistoryView, ViewUpdateType)>()
     private var viewDisposable: Disposable?
 
-    init(queue: Queue, context: AccountContext, originalMessageId: MessageId) {
+    init(queue: Queue, context: AccountContext, originalMessageId: EngineMessage.Id) {
         self.queue = queue
         self.context = context
         self.originalMessageId = originalMessageId
@@ -36,7 +36,7 @@ private final class MolteagramEditedMessagesChatContentsImpl {
         })
     }
 
-    private func handle(_ combined: CombinedView, originalMessageId: MessageId) {
+    private func handle(_ combined: CombinedView, originalMessageId: EngineMessage.Id) {
         guard let tagView = combined.views[.localMessageTag(kMolteagramEditedTag)] as? LocalMessageTagsView else {
             return
         }
@@ -138,9 +138,9 @@ public final class MolteagramEditedMessagesChatContents: ChatCustomContentsProto
     public func hashtagSearchUpdate(query: String) {}
 
     private let impl: QueueLocalObject<MolteagramEditedMessagesChatContentsImpl>
-    private let originalMessageId: MessageId
+    private let originalMessageId: EngineMessage.Id
 
-    public init(context: AccountContext, originalMessageId: MessageId) {
+    public init(context: AccountContext, originalMessageId: EngineMessage.Id) {
         self.originalMessageId = originalMessageId
         let queue = Queue(name: "MolteagramEditedMsgContents")
         impl = QueueLocalObject(queue: queue) {

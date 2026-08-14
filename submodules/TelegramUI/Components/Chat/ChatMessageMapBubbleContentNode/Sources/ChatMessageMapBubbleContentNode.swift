@@ -4,6 +4,7 @@ import AsyncDisplayKit
 import Display
 import SwiftSignalKit
 import TelegramCore
+import Postbox
 import LiveLocationTimerNode
 import PhotoResources
 import MediaResources

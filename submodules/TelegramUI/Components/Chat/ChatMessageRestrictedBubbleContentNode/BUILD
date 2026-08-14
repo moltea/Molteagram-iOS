@@ -14,6 +14,7 @@ swift_library(
         "//submodules/AsyncDisplayKit",
         "//submodules/SSignalKit/SwiftSignalKit",
         "//submodules/TelegramCore",
+        "//submodules/Postbox",
         "//submodules/TelegramPresentationData",
         "//submodules/TextFormat",
         "//submodules/TelegramUI/Components/Chat/ChatMessageDateAndStatusNode",
@@ -24,4 +25,3 @@ swift_library(
         "//visibility:public",
     ],
 )
-

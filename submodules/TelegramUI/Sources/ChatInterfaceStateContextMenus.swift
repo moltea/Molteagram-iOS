@@ -2,6 +2,7 @@ import Foundation
 import UIKit
 import Molteagram
 import MolteagramCore
+import Postbox
 import TelegramCore
 import AsyncDisplayKit
 import Display
@@ -2388,7 +2389,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
         
         if let message = messages.first, case let .customChatContents(customChatContents) = chatPresentationInterfaceState.subject {
             switch customChatContents.kind {
-            case .hashTagSearch:
+            case .hashTagSearch, .deletedMessages, .editedMessages(_):
                 break
             case .quickReplyMessageInput:
                 actions.removeAll()
