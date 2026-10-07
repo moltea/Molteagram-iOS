@@ -3051,10 +3051,12 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         findRemoved: for i in 0 ..< currentContentClassesPropertiesAndLayouts.count {
             let currentMessage = currentContentClassesPropertiesAndLayouts[i].0
             let currentClass: AnyClass = currentContentClassesPropertiesAndLayouts[i].1
+            let currentIndex = currentContentClassesPropertiesAndLayouts[i].3
             for contentItemValue in contentNodeMessagesAndClasses {
-                let contentItem = contentItemValue as (message: Message, type: AnyClass, ChatMessageEntryAttributes, BubbleItemAttributes)
+                let contentItem = contentItemValue as (message: Message, type: AnyClass, ChatMessageEntryAttributes, attributes: BubbleItemAttributes)
 
-                if currentClass == contentItem.type && currentMessage.stableId == contentItem.message.stableId {
+                // Use the same identity as layout reuse: one message can contain several indexed media cells.
+                if currentClass == contentItem.type && currentIndex == contentItem.attributes.index && currentMessage.stableId == contentItem.message.stableId {
                     continue findRemoved
                 }
             }
@@ -3068,9 +3070,11 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         var updatedContentNodeOrder = false
         if currentContentClassesPropertiesAndLayouts.count == contentNodeMessagesAndClasses.count {
             for i in 0 ..< currentContentClassesPropertiesAndLayouts.count {
+                let currentMessage = currentContentClassesPropertiesAndLayouts[i].0
                 let currentClass: AnyClass = currentContentClassesPropertiesAndLayouts[i].1
-                let contentItem = contentNodeMessagesAndClasses[i] as (message: Message, type: AnyClass, ChatMessageEntryAttributes, BubbleItemAttributes)
-                if currentClass != contentItem.type {
+                let currentIndex = currentContentClassesPropertiesAndLayouts[i].3
+                let contentItem = contentNodeMessagesAndClasses[i] as (message: Message, type: AnyClass, ChatMessageEntryAttributes, attributes: BubbleItemAttributes)
+                if currentClass != contentItem.type || currentIndex != contentItem.attributes.index || currentMessage.stableId != contentItem.message.stableId {
                     updatedContentNodeOrder = true
                     break
                 }
