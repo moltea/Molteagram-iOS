@@ -23,6 +23,7 @@ import PremiumUI
 import ChatTitleView
 import ChatInputNode
 import ChatEntityKeyboardInputNode
+import class ChatEntityKeyboardInputNode.EmptyInputView
 import ChatControllerInteraction
 import ChatAvatarNavigationNode
 import AccessoryPanelNode

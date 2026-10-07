@@ -85,7 +85,7 @@ private final class TableStructuralMenuAlignmentItemNode: ASDisplayNode, Context
     func updateLayout(constrainedWidth: CGFloat, constrainedHeight: CGFloat) -> (CGSize, (CGSize, ContainedViewLayoutTransition) -> Void) {
         let size = CGSize(width: constrainedWidth, height: 68.0)
 
-        return (size, { size, transition in
+        return (size, { [self] size, transition in
             self.validLayout = (constrainedWidth, constrainedHeight, size)
             
             let titleSize = self.title.update(

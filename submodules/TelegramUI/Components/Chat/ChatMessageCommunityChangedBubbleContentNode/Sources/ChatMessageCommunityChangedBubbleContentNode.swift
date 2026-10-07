@@ -113,7 +113,7 @@ public class ChatMessageCommunityChangedBubbleContentNode: ChatMessageBubbleCont
         let makeSubtitleLayout = TextNode.asyncLayout(self.subtitleNode)
         let makeButtonTitleLayout = TextNode.asyncLayout(self.buttonTitleNode)
         
-        return { item, _, _, _, _, _ in
+        return { [self] item, _, _, _, _, _ in
             let contentProperties = ChatMessageBubbleContentProperties(hidesSimpleAuthorHeader: true, headerSpacing: 0.0, hidesBackground: .always, forceFullCorners: false, forceAlignment: .center)
             
             return (contentProperties, nil, CGFloat.greatestFiniteMagnitude, { constrainedSize, _ in
