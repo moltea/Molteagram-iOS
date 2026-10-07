@@ -733,6 +733,20 @@ static NSMutableDictionary<NSString *, TrustedWebRecord *> *trustedWebRecords() 
     if (!windowClass) {
         return nil;
     }
+    if (@available(iOS 27.0, *)) {
+        // iOS 27 rejects the private screen-based lookup. Inspect only existing scene windows.
+        for (UIScene *scene in self.connectedScenes) {
+            if (![scene isKindOfClass:[UIWindowScene class]]) {
+                continue;
+            }
+            for (UIWindow *window in ((UIWindowScene *)scene).windows) {
+                if ([window isKindOfClass:windowClass]) {
+                    return window;
+                }
+            }
+        }
+        return nil;
+    }
     UIWindow *result = [(id<UIRemoteKeyboardWindowProtocol>)windowClass remoteKeyboardWindowForScreen:[UIScreen mainScreen] create:false];
     
     if (result) {

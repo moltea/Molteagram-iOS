@@ -88,10 +88,14 @@ private func isKeyboardViewContainer(view: NSObject) -> Bool {
 }
 
 private class ApplicationStatusBarHost: StatusBarHost {
-    private weak var scene: UIWindowScene?
+    private weak var window: UIWindow?
     
-    init(scene: UIWindowScene?) {
-        self.scene = scene
+    init(window: UIWindow) {
+        self.window = window
+    }
+
+    private var scene: UIWindowScene? {
+        return self.window?.windowScene
     }
     
     var isApplicationInForeground: Bool {
@@ -398,7 +402,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         }
         
         let (window, hostView) = nativeWindowHostView()
-        let statusBarHost = ApplicationStatusBarHost(scene: window.windowScene)
+        let statusBarHost = ApplicationStatusBarHost(window: window)
         self.mainWindow = Window1(hostView: hostView, statusBarHost: statusBarHost)
         if let traitCollection = window.rootViewController?.traitCollection {
             if #available(iOS 13.0, *) {
@@ -782,7 +786,9 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         GlobalExperimentalSettings.isAppStoreBuild = buildConfig.isAppStoreBuild
         GlobalExperimentalSettings.enableFeed = false
         
-        self.window?.makeKeyAndVisible()
+        if let window = self.window, window.windowScene != nil {
+            window.makeKeyAndVisible()
+        }
         
         var hasActiveCalls: Signal<Bool, NoError> = .single(false)
         if CallKitIntegration.isAvailable, let callKitIntegration = CallKitIntegration.shared {
@@ -1039,7 +1045,9 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             let phoneCode = String(repeating: dcDigit, count: 5)
 
             let window = self.window!
-            window.makeKeyAndVisible()
+            if window.windowScene != nil {
+                window.makeKeyAndVisible()
+            }
 
             NSLog("[DeleteAccount] starting for +\(digits)")
             let _ = test_loginAndDeleteAccount(
@@ -1523,14 +1531,6 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             Logger.shared.log("App \(self.episodeId)", "isActive = \(value)")
         })
         
-        if let url = launchOptions?[.url] {
-            if let url = url as? URL, url.scheme == "tg" || url.scheme == buildConfig.appSpecificUrlScheme {
-                self.openUrlWhenReady(url: url, external: true)
-            } else if let urlString = url as? String, urlString.lowercased().hasPrefix("tg:") || urlString.lowercased().hasPrefix("\(buildConfig.appSpecificUrlScheme):"), let url = URL(string: urlString) {
-                self.openUrlWhenReady(url: url, external: true)
-            }
-        }
-        
         if application.applicationState == .active {
             self.isInForegroundValue = true
             self.isInForegroundPromise.set(true)
@@ -1905,6 +1905,13 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             }
             UIApplication.shared.applicationIconBadgeNumber = Int(count)
         }))
+    }
+
+    func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        let configuration = UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
+        configuration.sceneClass = UIWindowScene.self
+        configuration.delegateClass = SceneDelegate.self
+        return configuration
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
@@ -2517,8 +2524,15 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             combineLatest(self.context.get(), self.authContext.get())
             |> filter { $0 != nil || $1 != nil }
             |> take(1)
-            |> map { context, authContext -> (SharedAccountContextImpl, AuthorizedApplicationContext?, UnauthorizedApplicationContext?) in
-                return (sharedApplicationContext.sharedContext, context, authContext)
+            |> mapToSignal { context, authContext -> Signal<(SharedAccountContextImpl, AuthorizedApplicationContext?, UnauthorizedApplicationContext?), NoError> in
+                // Scene connection can deliver URLs before the account's root controller is ready.
+                let isReady = authContext?.isReady.get() ?? context?.isReady.get() ?? .single(false)
+                return isReady
+                |> filter { $0 }
+                |> take(1)
+                |> map { _ in
+                    return (sharedApplicationContext.sharedContext, context, authContext)
+                }
             }
         }
         |> deliverOnMainQueue).start(next: { sharedContext, context, authContext in
@@ -2531,7 +2545,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                     authContext.rootController.view.endEditing(true)
                     let presentationData = authContext.sharedContext.currentPresentationData.with { $0 }
                     let controller = ProxyServerPreviewScreen(sharedContext: authContext.sharedContext, network: authContext.account.network, updatedPresentationData: (presentationData, authContext.sharedContext.presentationData), server: proxyData)
-                    authContext.rootController.currentWindow?.present(controller, on: PresentationSurfaceLevel.root, blockInteraction: false, completion: {})
+                    self.mainWindow.present(controller, on: PresentationSurfaceLevel.root, blockInteraction: false, completion: {})
                 } else if let secureIdData = parseSecureIdUrl(url) {
                     let presentationData = authContext.sharedContext.currentPresentationData.with { $0 }
                     
@@ -2548,7 +2562,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                             TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})
                         ]
                     )
-                    authContext.rootController.currentWindow?.present(alertController, on: .root, blockInteraction: false, completion: {})
+                    self.mainWindow.present(alertController, on: .root, blockInteraction: false, completion: {})
                 }
             }
         })
