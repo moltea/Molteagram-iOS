@@ -63,11 +63,13 @@ class KeyboardManager {
     }
     
     func updateInteractiveInputOffset(_ offset: CGFloat, transition: ContainedViewLayoutTransition, completion: @escaping () -> Void) {
+        self.interactiveInputOffset = offset
+
         guard let keyboardView = self.host.keyboardView else {
+            // UIKit can host the keyboard outside the app. Dismissal must still finish and end editing.
+            completion()
             return
         }
-        
-        self.interactiveInputOffset = offset
         
         let previousBounds = keyboardView.bounds
         let updatedBounds = CGRect(origin: CGPoint(x: 0.0, y: -offset), size: previousBounds.size)
