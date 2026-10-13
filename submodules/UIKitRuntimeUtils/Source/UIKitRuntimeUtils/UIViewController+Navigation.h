@@ -25,6 +25,7 @@ typedef NS_OPTIONS(NSUInteger, UIResponderDisableAutomaticKeyboardHandling) {
 - (void)internalSetStatusBarHidden:(BOOL)hidden animation:(UIStatusBarAnimation)animation;
 /// Returns an existing keyboard window when UIKit exposes one, otherwise nil.
 - (UIWindow * _Nullable)internalGetKeyboard;
+- (UIWindow * _Nullable)internalGetKeyboardForScene:(UIWindowScene * _Nullable)scene;
 
 @end
 

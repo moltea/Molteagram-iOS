@@ -1881,9 +1881,7 @@ public final class ChatEntityKeyboardInputNode: ChatInputNode {
         }
         if case let .customChatContents(customChatContents) = interfaceState.subject {
             switch customChatContents.kind {
-            case .deletedMessages, .editedMessages(_):
-                break
-            case .quickReplyMessageInput:
+            case .deletedMessages, .editedMessages(_), .quickReplyMessageInput, .welcomeMessages:
                 break
             case .hashTagSearch:
                 break

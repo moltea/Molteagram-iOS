@@ -1,3 +1,5 @@
+load("@rules_cc//cc:objc_library.bzl", "objc_library")
+
 load("@bazel_skylib//rules:common_settings.bzl",
     "bool_flag",
 )
@@ -10,6 +12,7 @@ load("@build_bazel_rules_apple//apple:ios.bzl",
     "ios_framework",
     "ios_ui_test",
     "ios_ui_test_suite",
+    "ios_unit_test",
 )
 
 load(
@@ -24,6 +27,8 @@ load("@build_bazel_rules_apple//apple:resources.bzl",
 load("@build_bazel_rules_swift//swift:swift.bzl",
     "swift_library",
 )
+
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 load(
     "@rules_xcodeproj//xcodeproj:defs.bzl",
@@ -448,6 +453,8 @@ plist_fragment(
             <array>
                 <string>tg</string>
                 <string>tonsite</string>
+                <string>ton</string>
+                <string>tc</string>
             </array>
         </dict>
     </array>
@@ -1056,6 +1063,9 @@ plist_fragment(
 
 ios_framework(
     name = "TelegramUIFramework",
+    additional_linker_inputs = [
+        "//third-party/boringssl:crypto",
+    ],
     bundle_id = "{telegram_bundle_id}.TelegramUI".format(
         telegram_bundle_id = telegram_bundle_id,
     ),
@@ -1078,6 +1088,9 @@ ios_framework(
     minimum_os_version = minimum_os_version,
     extension_safe = True,
     ipa_post_processor = strip_framework,
+    linkopts = [
+        "$(location //third-party/boringssl:crypto)",
+    ],
     deps = [
         "//submodules/TelegramUI:TelegramUI",
     ] + debug_deps,
@@ -1144,6 +1157,7 @@ swift_library(
     ],
     deps = [
         "//submodules/TelegramUI",
+        "//submodules/PasscodeCore",
         "//submodules/TelegramUI/Components/ShareExtensionContext"
     ],
 )
@@ -1229,6 +1243,7 @@ swift_library(
     ],
     deps = [
         "//submodules/TelegramUI:TelegramUI",
+        "//submodules/PasscodeCore",
         ":NotificationContentExtensionLink",
     ],
 )
@@ -1331,6 +1346,7 @@ swift_library(
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/Postbox:Postbox",
         "//submodules/TelegramCore:TelegramCore",
+        "//submodules/PasscodeCore",
         "//submodules/OpenSSLEncryptionProvider:OpenSSLEncryptionProvider",
         "//Telegram:GeneratedSources",
     ],
@@ -1372,7 +1388,11 @@ ios_extension(
         ":AppNameInfoPlist",
     ],
     minimum_os_version = minimum_os_version, # maintain the same minimum OS version across extensions
-    ipa_post_processor = ":SetMinOsVersionWidgetExtension",
+    # Deliberately NOT patched down: this used to stamp MinimumOSVersion=14.0 so a WidgetKit
+    # extension could ship while the app min was 13.0. Now that the app min is >= 14, stamping
+    # a plist minimum *below* the binary's minos makes App Store validation reject the bundle
+    # (error 90208). Same reason the other extensions' patches are commented out.
+    #ipa_post_processor = ":SetMinOsVersionWidgetExtension",
     #provides_main = True,
     provisioning_profile = "@build_configuration//provisioning:Widget.mobileprovision",
     entitlements = ":WidgetEntitlements.entitlements",
@@ -1466,8 +1486,41 @@ swift_library(
         "//submodules/BuildConfig:BuildConfig",
         "//submodules/OpenSSLEncryptionProvider:OpenSSLEncryptionProvider",
         "//submodules/AppLockState:AppLockState",
+        "//submodules/PasscodeCore",
         "//Telegram:GeneratedSources",
         "//submodules/WidgetItems:WidgetItems",
+    ],
+)
+
+swift_library(
+    name = "IntentsExtensionTestsLib",
+    testonly = True,
+    srcs = glob([
+        "SiriIntentsTests/**/*.swift",
+    ]),
+    deps = [
+        ":IntentsExtensionLib",
+        "//submodules/Postbox:Postbox",
+        "//submodules/TelegramCore:TelegramCore",
+        "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
+    ],
+)
+
+ios_test_runner(
+    name = "IntentsExtensionTestRunner",
+    device_type = "iPhone 17",
+    os_version = "26.5",
+)
+
+ios_unit_test(
+    name = "IntentsExtensionTests",
+    minimum_os_version = minimum_os_version,
+    runner = ":IntentsExtensionTestRunner",
+    deps = [
+        ":IntentsExtensionTestsLib",
+    ],
+    visibility = [
+        "//visibility:public",
     ],
 )
 
@@ -1778,6 +1831,23 @@ plist_fragment(
         <string>AremacFS-Regular.otf</string>
         <string>AremacFS-Semibold.otf</string>
     </array>
+    <key>UIApplicationSceneManifest</key>
+    <dict>
+        <key>UIApplicationSupportsMultipleScenes</key>
+        <false/>
+        <key>UISceneConfigurations</key>
+        <dict>
+            <key>UIWindowSceneSessionRoleApplication</key>
+            <array>
+                <dict>
+                    <key>UISceneConfigurationName</key>
+                    <string>Default Configuration</string>
+                    <key>UISceneDelegateClassName</key>
+                    <string>SceneDelegate</string>
+                </dict>
+            </array>
+        </dict>
+    </dict>
     <key>UIBackgroundModes</key>
     <array>
         <string>audio</string>
@@ -1845,23 +1915,6 @@ plist_fragment(
     </array>
     <key>CADisableMinimumFrameDurationOnPhone</key>
     <true/>
-    <key>UIApplicationSceneManifest</key>
-    <dict>
-        <key>UIApplicationSupportsMultipleScenes</key>
-        <false/>
-        <key>UISceneConfigurations</key>
-        <dict>
-            <key>UIWindowSceneSessionRoleApplication</key>
-            <array>
-                <dict>
-                    <key>UISceneConfigurationName</key>
-                    <string>Default Configuration</string>
-                    <key>UISceneDelegateClassName</key>
-                    <string>MolteagramSceneDelegate</string>
-                </dict>
-            </array>
-        </dict>
-    </dict>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
     """.format(
@@ -2099,4 +2152,15 @@ ios_application(
     deps = [
         "//third-party/libvpx:vpx",
     ],
+)
+
+# Actual generated localization resources for unhosted preview integration tests.
+filegroup(
+    name = "InstantPagePreviewTestStrings",
+    testonly = True,
+    srcs = [
+        ":GeneratedPresentationStrings/Resources/PresentationStrings.data",
+        "Telegram-iOS/en.lproj/Localizable.strings",
+    ],
+    visibility = ["//submodules/ChatListUI:__pkg__"],
 )

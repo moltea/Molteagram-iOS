@@ -1,4 +1,5 @@
 import Foundation
+import LottieSettings
 import UIKit
 import AsyncDisplayKit
 import Display
@@ -32,7 +33,7 @@ public class ChatMessageMapBubbleContentNode: ChatMessageBubbleContentNode {
     
     private var timeoutTimer: (SwiftSignalKit.Timer, Int32)?
     
-    required public init() {
+    required public init(lottieSettings: LottieRenderingSettings) {
         self.imageNode = TransformImageNode()
         self.imageNode.contentAnimations = [.subsequentUpdates]
         self.pinNode = ChatMessageLiveLocationPositionNode()
@@ -40,7 +41,7 @@ public class ChatMessageMapBubbleContentNode: ChatMessageBubbleContentNode {
         self.titleNode = TextNode()
         self.textNode = TextNode()
         
-        super.init()
+        super.init(lottieSettings: lottieSettings)
         
         self.addSubnode(self.imageNode)
         self.addSubnode(self.pinNode)
@@ -77,7 +78,7 @@ public class ChatMessageMapBubbleContentNode: ChatMessageBubbleContentNode {
         
         let previousMedia = self.media
         
-        return { item, layoutConstants, preparePosition, _, constrainedSize, _ in
+        return { [weak self] item, layoutConstants, preparePosition, _, constrainedSize, _ in
             var selectedMedia: TelegramMediaMap?
             var activeLiveBroadcastingTimeout: Int32?
             for media in item.message.media {
@@ -167,7 +168,7 @@ public class ChatMessageMapBubbleContentNode: ChatMessageBubbleContentNode {
             }
             let (pinSize, pinApply) = makePinLayout(item.context, item.presentationData.theme.theme, mode)
             
-            return (contentProperties, nil, maximumWidth, { constrainedSize, position in
+            return (contentProperties, nil, maximumWidth, { [weak self] constrainedSize, position in
                 let imageCorners: ImageCorners
                 let maxTextWidth: CGFloat
                 
@@ -315,7 +316,7 @@ public class ChatMessageMapBubbleContentNode: ChatMessageBubbleContentNode {
                     contentWidth = imageSize.width + bubbleInsets.left + bubbleInsets.right
                 }
                 
-                return (contentWidth, { boundingWidth in
+                return (contentWidth, { [weak self] boundingWidth in
                     let arguments = TransformImageArguments(corners: imageCorners, imageSize: imageSize, boundingSize: imageSize, intrinsicInsets: UIEdgeInsets(), emptyColor: incoming ? item.presentationData.theme.theme.chat.message.incoming.mediaPlaceholderColor : item.presentationData.theme.theme.chat.message.outgoing.mediaPlaceholderColor)
                     
                     let imageLayoutSize = CGSize(width: imageSize.width + bubbleInsets.left + bubbleInsets.right, height: imageSize.height + bubbleInsets.top + bubbleInsets.bottom)

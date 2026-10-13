@@ -12,17 +12,23 @@ public struct Namespaces {
         public static let QuickReplyLocal: Int32 = 6
         public static let EphemeralLocal: Int32 = 7
         public static let LocalEditedArchive: Int32 = 100
+        public static let EphemeralAnchored: Int32 = 8
+        public static let WelcomeMessageCloud: Int32 = 9
+        public static let WelcomeMessageLocal: Int32 = 10
         
         public static let allScheduled: Set<Int32> = Set([Namespaces.Message.ScheduledCloud, Namespaces.Message.ScheduledLocal])
         public static let allQuickReply: Set<Int32> = Set([Namespaces.Message.QuickReplyCloud, Namespaces.Message.QuickReplyLocal])
-        public static let allEphemeral: Set<Int32> = Set([Namespaces.Message.EphemeralLocal])
-        public static let allNonRegular: Set<Int32> = Set([Namespaces.Message.ScheduledCloud, Namespaces.Message.ScheduledLocal, Namespaces.Message.QuickReplyCloud, Namespaces.Message.QuickReplyLocal, Namespaces.Message.LocalEditedArchive])
+        public static let allEphemeral: Set<Int32> = Set([Namespaces.Message.EphemeralLocal, Namespaces.Message.EphemeralAnchored])
+        public static let allWelcomeMessages: Set<Int32> = Set([Namespaces.Message.WelcomeMessageCloud, Namespaces.Message.WelcomeMessageLocal])
+        public static let allNonRegular: Set<Int32> = Set([Namespaces.Message.ScheduledCloud, Namespaces.Message.ScheduledLocal, Namespaces.Message.QuickReplyCloud, Namespaces.Message.QuickReplyLocal, Namespaces.Message.WelcomeMessageCloud, Namespaces.Message.WelcomeMessageLocal, Namespaces.Message.EphemeralAnchored, Namespaces.Message.LocalEditedArchive])
         public static let allLocal: [Int32] = [
             Namespaces.Message.Local,
             Namespaces.Message.SecretIncoming,
             Namespaces.Message.ScheduledLocal,
             Namespaces.Message.QuickReplyLocal,
-            Namespaces.Message.EphemeralLocal
+            Namespaces.Message.EphemeralLocal,
+            Namespaces.Message.WelcomeMessageLocal,
+            Namespaces.Message.EphemeralAnchored
         ]
     }
     
@@ -157,6 +163,10 @@ public struct Namespaces {
         public static let cachedCloudAITextStyles: Int8 = 53
         public static let cachedCommunityPeerLinkRequests: Int8 = 54
         public static let richTextComposerDrafts: Int8 = 55
+        public static let cachedCurrencyRates: Int8 = 56
+        public static let cachedExistingWaltBalance: Int8 = 57
+        public static let notificationRequestMessageIds: Int8 = 58
+        public static let cachedWalletUserAddresses: Int8 = 59
     }
     
     public struct UnorderedItemList {
@@ -212,6 +222,7 @@ public extension PendingMessageActionType {
     static let readReactionOrPollVote = PendingMessageActionType(rawValue: 3)
     static let sendStarsReaction = PendingMessageActionType(rawValue: 4)
     static let sendPostponedPaidMessage = PendingMessageActionType(rawValue: 5)
+    static let walletTransfer = PendingMessageActionType(rawValue: 6)
 }
 
 public let peerIdNamespacesWithInitialCloudMessageHoles = [Namespaces.Peer.CloudUser, Namespaces.Peer.CloudGroup, Namespaces.Peer.CloudChannel]
@@ -337,6 +348,7 @@ private enum PreferencesKeyValues: Int32 {
     case emojiGameInfo = 48
     case webBrowserSettings = 49
     case communitiesState = 50
+    case unreadCounterTagsState = 51
 }
 
 public func applicationSpecificPreferencesKey(_ value: Int32) -> ValueBoxKey {
@@ -355,6 +367,12 @@ public struct PreferencesKeys {
     public static let globalNotifications: ValueBoxKey = {
         let key = ValueBoxKey(length: 4)
         key.setInt32(0, value: PreferencesKeyValues.globalNotifications.rawValue)
+        return key
+    }()
+    
+    public static let unreadCounterTagsState: ValueBoxKey = {
+        let key = ValueBoxKey(length: 4)
+        key.setInt32(0, value: PreferencesKeyValues.unreadCounterTagsState.rawValue)
         return key
     }()
     
@@ -630,6 +648,7 @@ private enum SharedDataKeyValues: Int32 {
     case wallapersState = 8
     case chatThemes = 10
     case deviceContacts = 11
+    case networkEngineSettings = 12
 }
 
 public struct SharedDataKeys {
@@ -690,6 +709,12 @@ public struct SharedDataKeys {
     public static let deviceContacts: ValueBoxKey = {
         let key = ValueBoxKey(length: 4)
         key.setInt32(0, value: SharedDataKeyValues.deviceContacts.rawValue)
+        return key
+    }()
+    
+    public static let networkEngineSettings: ValueBoxKey = {
+        let key = ValueBoxKey(length: 4)
+        key.setInt32(0, value: SharedDataKeyValues.networkEngineSettings.rawValue)
         return key
     }()
 }

@@ -3,6 +3,7 @@ import UIKit
 import Display
 import AccountContext
 import TelegramPresentationData
+import PresentationDataUtils
 import SwiftSignalKit
 import ContextUI
 import TelegramCore
@@ -12,6 +13,7 @@ import ComponentFlow
 import ComponentDisplayAdapters
 import EmojiStatusComponent
 import MolteagramCore
+import SettingsUI
 
 extension PeerInfoScreenNode {
     func accountContextMenuItems(context: AccountContext, logout: @escaping () -> Void, logoutKeepSession: @escaping () -> Void) -> Signal<[ContextMenuItem], NoError> {
@@ -73,30 +75,45 @@ extension PeerInfoScreenNode {
     }
     
     func logoutAccount(id: AccountRecordId) {
-        let controller = ActionSheetController(presentationData: self.presentationData)
-        let dismissAction: () -> Void = { [weak controller] in
-            controller?.dismissAnimated()
+        let presentationData = self.presentationData
+        self.logoutConfirmationDisposable.set(nil)
+        self.logoutConfirmationDisposable.set((self.context.sharedContext.activeAccountContexts
+        |> take(1)
+        |> mapToSignal { primary, accounts, _ -> Signal<String, NoError> in
+            let accountContext: AccountContext?
+            if let primary, primary.account.id == id {
+                accountContext = primary
+            } else {
+                accountContext = accounts.first(where: { $0.0 == id })?.1
+            }
+            guard let accountContext else { return .complete() }
+            return logoutConfirmationText(context: accountContext, presentationData: presentationData)
         }
-        
-        var items: [ActionSheetItem] = []
-        items.append(ActionSheetTextItem(title: self.presentationData.strings.Settings_LogoutConfirmationText.trimmingCharacters(in: .whitespacesAndNewlines)))
-        items.append(ActionSheetButtonItem(title: MolteagramStrings.get("Molteagram.LogoutKeepSession", languageCode: self.presentationData.strings.primaryComponent.languageCode), color: .destructive, action: { [weak self] in
-            dismissAction()
-            if let strongSelf = self {
-                let _ = logoutFromAccount(id: id, accountManager: strongSelf.context.sharedContext.accountManager, alreadyLoggedOutRemotely: true).startStandalone()
-            }
+        |> deliverOnMainQueue).start(next: { [weak self] text in
+            guard let self else { return }
+            let controller = textAlertController(
+                context: self.context,
+                updatedPresentationData: self.controller?.updatedPresentationData,
+                title: presentationData.strings.Settings_LogoutConfirmationTitle,
+                text: text,
+                actions: [
+                    TextAlertAction(type: .genericAction, title: presentationData.strings.Common_Cancel, action: {
+                    }),
+                    TextAlertAction(type: .defaultDestructiveAction, title: MolteagramStrings.get("Molteagram.LogoutKeepSession", languageCode: presentationData.strings.primaryComponent.languageCode), action: { [weak self] in
+                        if let strongSelf = self {
+                            let _ = logoutFromAccount(id: id, accountManager: strongSelf.context.sharedContext.accountManager, alreadyLoggedOutRemotely: true).startStandalone()
+                        }
+                    }),
+                    TextAlertAction(type: .defaultDestructiveAction, title: presentationData.strings.Settings_Logout, action: { [weak self] in
+                        if let strongSelf = self {
+                            let _ = logoutFromAccount(id: id, accountManager: strongSelf.context.sharedContext.accountManager, alreadyLoggedOutRemotely: false).startStandalone()
+                        }
+                    })
+                ],
+                parseMarkdown: true
+            )
+            self.controller?.present(controller, in: .window(.root))
         }))
-        items.append(ActionSheetButtonItem(title: self.presentationData.strings.Settings_Logout, color: .destructive, action: { [weak self] in
-            dismissAction()
-            if let strongSelf = self {
-                let _ = logoutFromAccount(id: id, accountManager: strongSelf.context.sharedContext.accountManager, alreadyLoggedOutRemotely: false).startStandalone()
-            }
-        }))
-        controller.setItemGroups([
-            ActionSheetItemGroup(items: items),
-            ActionSheetItemGroup(items: [ActionSheetButtonItem(title: presentationData.strings.Common_Cancel, action: { dismissAction() })])
-        ])
-        self.controller?.present(controller, in: .window(.root), with: ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
     }
 
     func logoutAccountKeepSession(id: AccountRecordId) {

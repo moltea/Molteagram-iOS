@@ -210,7 +210,7 @@ final class AutomaticBusinessMessageSetupChatContents: ChatCustomContentsProtoco
             initialShortcut = ""
         case .hashTagSearch:
             initialShortcut = ""
-        case .deletedMessages, .editedMessages(_):
+        case .deletedMessages, .editedMessages(_), .welcomeMessages:
             initialShortcut = ""
         }
         
@@ -250,7 +250,7 @@ final class AutomaticBusinessMessageSetupChatContents: ChatCustomContentsProtoco
             break
         case .hashTagSearch:
             break
-        case .deletedMessages, .editedMessages(_):
+        case .deletedMessages, .editedMessages(_), .welcomeMessages:
             break
         }
     }

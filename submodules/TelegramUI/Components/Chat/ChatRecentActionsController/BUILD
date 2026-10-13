@@ -10,6 +10,7 @@ swift_library(
         
     ],
     deps = [
+        "//submodules/UrlWhitelist",
         "//submodules/AccountContext",
         "//submodules/AlertUI",
         "//submodules/AsyncDisplayKit",

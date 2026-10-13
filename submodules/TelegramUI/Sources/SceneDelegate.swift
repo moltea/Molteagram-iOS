@@ -1,82 +1,86 @@
 import UIKit
 
-/// Connects the application's single window to UIKit's scene lifecycle.
-@objc(MolteagramSceneDelegate) final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+@objc(SceneDelegate) final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
-    private var pendingShortcutItem: UIApplicationShortcutItem?
+
+    /// True only for the single application-role scene that owns the app's window.
+    /// Non-application scenes (e.g. an external display) get their own `SceneDelegate`
+    /// instance, and must never drive app-wide life-cycle state.
+    private var isPrimaryScene = false
 
     private var appDelegate: AppDelegate? {
         return UIApplication.shared.delegate as? AppDelegate
     }
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        guard let windowScene = scene as? UIWindowScene, let window = self.appDelegate?.window else {
+        guard session.role == .windowApplication, let windowScene = scene as? UIWindowScene else {
             return
         }
-
-        // Application services also initialize for background launches, before a scene exists.
-        window.windowScene = windowScene
-        window.frame = windowScene.coordinateSpace.bounds
-        self.window = window
-        window.makeKeyAndVisible()
-
-        self.pendingShortcutItem = connectionOptions.shortcutItem
-        self.scene(scene, openURLContexts: connectionOptions.urlContexts)
-        for userActivity in connectionOptions.userActivities {
-            self.scene(scene, continue: userActivity)
+        guard let appDelegate = self.appDelegate else {
+            return
         }
-        // Notification responses remain handled by AppDelegate's notification center delegate.
-    }
-
-    func sceneDidDisconnect(_ scene: UIScene) {
-        self.window?.isHidden = true
-        self.window?.windowScene = nil
-        self.window = nil
-    }
-
-    func sceneWillEnterForeground(_ scene: UIScene) {
-        self.appDelegate?.applicationWillEnterForeground(UIApplication.shared)
+        self.isPrimaryScene = true
+        appDelegate.attach(scene: windowScene, connectionOptions: connectionOptions)
+        self.window = appDelegate.window
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
-        self.appDelegate?.applicationDidBecomeActive(UIApplication.shared)
-        if let shortcutItem = self.pendingShortcutItem {
-            self.pendingShortcutItem = nil
-            self.appDelegate?.application(UIApplication.shared, performActionFor: shortcutItem, completionHandler: { _ in })
+        guard self.isPrimaryScene else {
+            return
         }
+        self.appDelegate?.handleDidBecomeActive()
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
-        self.appDelegate?.applicationWillResignActive(UIApplication.shared)
+        guard self.isPrimaryScene else {
+            return
+        }
+        self.appDelegate?.handleWillResignActive()
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
-        self.appDelegate?.applicationDidEnterBackground(UIApplication.shared)
+        guard self.isPrimaryScene else {
+            return
+        }
+        self.appDelegate?.handleDidEnterBackground()
     }
 
-    func scene(_ scene: UIScene, openURLContexts urlContexts: Set<UIOpenURLContext>) {
-        for urlContext in urlContexts {
-            var options: [UIApplication.OpenURLOptionsKey: Any] = [.openInPlace: urlContext.options.openInPlace]
-            if let sourceApplication = urlContext.options.sourceApplication {
-                options[.sourceApplication] = sourceApplication
-            }
-            if let annotation = urlContext.options.annotation {
-                options[.annotation] = annotation
-            }
-            let _ = self.appDelegate?.application(UIApplication.shared, open: urlContext.url, options: options)
+    func sceneWillEnterForeground(_ scene: UIScene) {
+        guard self.isPrimaryScene else {
+            return
+        }
+        self.appDelegate?.handleWillEnterForeground()
+    }
+
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        guard self.isPrimaryScene else {
+            return
+        }
+        guard let appDelegate = self.appDelegate else {
+            return
+        }
+        for context in URLContexts {
+            appDelegate.handleOpenURL(context.url)
         }
     }
 
     func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
-        let _ = self.appDelegate?.application(UIApplication.shared, continue: userActivity, restorationHandler: { _ in })
+        guard self.isPrimaryScene else {
+            return
+        }
+        self.appDelegate?.handleUserActivity(userActivity)
     }
 
     func windowScene(_ windowScene: UIWindowScene, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {
+        guard self.isPrimaryScene else {
+            completionHandler(false)
+            return
+        }
         guard let appDelegate = self.appDelegate else {
             completionHandler(false)
             return
         }
-        appDelegate.application(UIApplication.shared, performActionFor: shortcutItem, completionHandler: completionHandler)
+        appDelegate.handleShortcutItem(shortcutItem, completionHandler: completionHandler)
     }
 
     @available(iOS 26.0, *)
